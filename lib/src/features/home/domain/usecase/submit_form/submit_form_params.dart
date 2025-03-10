@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
+import 'package:mime/mime.dart';
 import 'package:path/path.dart' as path;
-import 'package:ugz_app/src/utils/misc/print.dart';
 
 class SubmitFormParams {
   final String id;
@@ -37,17 +38,26 @@ class SubmitFormParams {
 
     for (var photo in photos) {
       if (photo.filePath != null && photo.filePath!.isNotEmpty) {
-        File file = File(photo.filePath!);
-        if (file.existsSync()) {
-          String originalFilename = path.basename(photo.filePath!);
-          printIfDebug("✅ Photo found: $originalFilename");
+        final File file = File(photo.filePath!);
 
-          files["file_${photo.id}"] = await MultipartFile.fromFile(
-            file.path,
-            filename: originalFilename,
-          );
+        if (await file.exists()) {
+          // Determine content type
+          final mimeType = lookupMimeType(photo.filePath!) ?? 'image/jpeg';
+
+          // Ensure we're only sending image files
+          if (mimeType.startsWith('image/')) {
+            final filename = path.basename(photo.filePath!);
+
+            files["file_${photo.id}"] = await MultipartFile.fromFile(
+              photo.filePath!,
+              filename: "image-${photo.id}${path.extension(filename)}",
+              contentType: MediaType.parse(mimeType),
+            );
+          } else {
+            print('Skipping non-image file: ${photo.filePath}');
+          }
         } else {
-          printIfDebug("⚠️ File not found: ${photo.filePath}");
+          print('File does not exist: ${photo.filePath}');
         }
       }
     }
@@ -59,14 +69,14 @@ class FormField {
   final String id;
   final String fieldTypeId;
   final String fieldTypeName;
-  final String taskFieldName;
+  final String formFieldName;
   final String value;
 
   FormField({
     required this.id,
     required this.fieldTypeId,
     required this.fieldTypeName,
-    required this.taskFieldName,
+    required this.formFieldName,
     required this.value,
   });
 
@@ -74,7 +84,7 @@ class FormField {
     "id": id,
     "field_type_id": fieldTypeId,
     "field_type_name": fieldTypeName,
-    "task_field_name": taskFieldName,
+    "form_field_name": formFieldName,
     "value": value,
   };
 }

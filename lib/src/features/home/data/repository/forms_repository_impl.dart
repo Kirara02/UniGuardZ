@@ -6,6 +6,7 @@ import 'package:ugz_app/src/features/home/domain/model/activity_submit_model.dar
 import 'package:ugz_app/src/features/home/domain/model/form_model.dart';
 import 'package:ugz_app/src/features/home/domain/model/form_submit_model.dart';
 import 'package:ugz_app/src/features/home/domain/model/task_model.dart';
+import 'package:ugz_app/src/features/home/domain/model/task_submit_model.dart';
 import 'package:ugz_app/src/global_providers/global_providers.dart';
 import 'package:ugz_app/src/utils/storage/dio/api_response.dart';
 import 'package:ugz_app/src/utils/storage/dio/dio_client.dart';
@@ -71,12 +72,15 @@ class FormsRepositoryImpl implements FormsRepository {
   }
 
   @override
-  Future<ApiResponse<FormSubmitModel>> submitTask({
+  Future<ApiResponse<TaskSubmitModel>> submitTask({
     required FormData data,
     required String id,
   }) async {
-    // TODO: implement submitTask
-    throw UnimplementedError();
+    return await _dioClient.postApiResponse<TaskSubmitModel>(
+      "mobile-api/admin/task/log/$id",
+      data: data,
+      converter: (json) => TaskSubmitModel.fromJson(json),
+    );
   }
 
   @override

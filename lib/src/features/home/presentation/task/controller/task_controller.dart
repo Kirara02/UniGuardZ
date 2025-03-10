@@ -11,30 +11,61 @@ import 'package:ugz_app/src/utils/misc/result.dart';
 
 part 'task_controller.g.dart';
 
+class TaskState {
+  final TaskModel? task;
+  final bool isSubmitting;
+  final bool isSubmitSuccess;
+  final String? error;
+  final bool isLoading;
+
+  const TaskState({
+    this.task,
+    this.isSubmitting = false,
+    this.isSubmitSuccess = false,
+    this.error,
+    this.isLoading = false,
+  });
+
+  TaskState copyWith({
+    TaskModel? task,
+    bool? isSubmitting,
+    bool? isSubmitSuccess,
+    String? error,
+    bool? isLoading,
+  }) {
+    return TaskState(
+      task: task ?? this.task,
+      isSubmitting: isSubmitting ?? this.isSubmitting,
+      isSubmitSuccess: isSubmitSuccess ?? this.isSubmitSuccess,
+      error: error,
+      isLoading: isLoading ?? this.isLoading,
+    );
+  }
+}
+
 @riverpod
 class TaskController extends _$TaskController {
   @override
-  FutureOr<TaskModel?> build(String? taskId) {
+  TaskState build(String? taskId) {
     if (taskId != null) {
       _fetchTaskDetail(taskId);
     }
-    return null;
+    return const TaskState(isLoading: true);
   }
 
   Future<void> _fetchTaskDetail(String taskId) async {
-    state = const AsyncLoading();
     try {
       final GetTaskById getTaskDetail = ref.read(getTaskByIdProvider);
       final result = await getTaskDetail(taskId);
 
       switch (result) {
-        case Success(value: final activity):
-          state = AsyncData(activity);
+        case Success(value: final task):
+          state = state.copyWith(task: task, isLoading: false);
         case Failed(message: final message):
-          state = AsyncError(Exception(message), StackTrace.current);
+          state = state.copyWith(error: message, isLoading: false);
       }
-    } catch (e, stack) {
-      state = AsyncError(e, stack);
+    } catch (e) {
+      state = state.copyWith(error: e.toString(), isLoading: false);
     }
   }
 
@@ -47,7 +78,12 @@ class TaskController extends _$TaskController {
     required String formId,
     required FormData data,
   }) async {
-    state = const AsyncLoading();
+    // Set submitting state
+    state = state.copyWith(
+      isSubmitting: true,
+      isSubmitSuccess: false,
+      error: null,
+    );
 
     final List<TaskField> fields = [];
     final List<TaskPhoto> photos = [];
@@ -85,7 +121,7 @@ class TaskController extends _$TaskController {
       ),
     );
 
-    // Tambahkan foto ke fields sebagai referensi
+    // Add photos to fields as references
     fields.addAll(
       data.photos.map(
         (e) => TaskField(
@@ -142,9 +178,8 @@ class TaskController extends _$TaskController {
       );
 
       if (success) {
-        // state = const AsyncData([]); // Success state
+        state = state.copyWith(isSubmitting: false, isSubmitSuccess: true);
       } else {
-        print('API submission failed, storing in local DB');
         // If API fails, store in local DB
         await insertTask(
           params: InsertPendingTaskParams(
@@ -159,34 +194,37 @@ class TaskController extends _$TaskController {
             ),
           ),
         );
+        state = state.copyWith(isSubmitting: false, isSubmitSuccess: true);
       }
     } catch (e) {
-      print('Error during submission: $e');
       // On error, store in local DB
-      await insertTask(
-        params: InsertPendingTaskParams(
-          record: TaskSubmitRecord(
-            formId: formId,
-            partitionKey: partitionKey,
-            timestamp: timestamp,
-            latitude: latitude,
-            longitude: longitude,
-            description: description,
-            data: data,
+      try {
+        await insertTask(
+          params: InsertPendingTaskParams(
+            record: TaskSubmitRecord(
+              formId: formId,
+              partitionKey: partitionKey,
+              timestamp: timestamp,
+              latitude: latitude,
+              longitude: longitude,
+              description: description,
+              data: data,
+            ),
           ),
-        ),
-      );
+        );
+        state = state.copyWith(isSubmitting: false, isSubmitSuccess: true);
+      } catch (innerError) {
+        state = state.copyWith(
+          isSubmitting: false,
+          error: "Failed to submit: $innerError",
+        );
+      }
     }
   }
 
   Future<void> insertTask({required InsertPendingTaskParams params}) async {
-    // state = const AsyncLoading();
     final insert = ref.read(dbInsertPendingTaskProvider);
     await insert(params);
-
-    // state = await AsyncValue.guard(() async {
-    //   await insert(params);
-    // });
   }
 
   Future<bool> submitToApi({
@@ -218,7 +256,6 @@ class TaskController extends _$TaskController {
           return false;
       }
     } catch (e) {
-      print(e);
       return false;
     }
   }

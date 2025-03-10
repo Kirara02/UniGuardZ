@@ -27,26 +27,11 @@ class _FormScreenState extends ConsumerState<FormScreen>
   final Map<String, dynamic> formValues = {};
   double? latitude;
   double? longitude;
-  bool isLoading = false;
-
-  void _setLoading(bool value) {
-    setState(() {
-      isLoading = value;
-    });
-  }
 
   final Map<String, SignatureController> _signatureControllers = {};
 
   @override
-  void initState() {
-    super.initState();
-    // Initialize form controller with form ID
-    ref.read(formControllerProvider(widget.formId));
-  }
-
-  @override
   void dispose() {
-    // Dispose all signature controllers
     for (var controller in _signatureControllers.values) {
       controller.dispose();
     }
@@ -56,18 +41,17 @@ class _FormScreenState extends ConsumerState<FormScreen>
   @override
   Widget build(BuildContext context) {
     final textTheme = context.textTheme;
-    final formData = ref.watch(formControllerProvider(widget.formId));
+    // Use the custom FormState
+    final formState = ref.watch(formControllerProvider(widget.formId));
 
     // Listen for state changes
     ref.listen(formControllerProvider(widget.formId), (prev, next) {
-      if (prev is AsyncLoading && next is AsyncData) {
-        _setLoading(false);
+      if (!prev!.isSubmitSuccess && next.isSubmitSuccess) {
         _showSuccessDialog();
       }
 
-      if (next is AsyncError) {
+      if (next.error != null && prev.error != next.error) {
         context.showSnackBar("An error occurred: ${next.error}");
-        _setLoading(false);
       }
     });
 
@@ -79,11 +63,16 @@ class _FormScreenState extends ConsumerState<FormScreen>
           child: Container(
             padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
             child: ElevatedButton(
-              onPressed: isLoading ? null : _submitForm,
+              onPressed:
+                  formState.isSubmitting ||
+                          formState.isLoading ||
+                          formState.form == null
+                      ? null
+                      : _submitForm,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  if (isLoading)
+                  if (formState.isSubmitting)
                     const SizedBox(
                       height: 20,
                       width: 20,
@@ -92,8 +81,7 @@ class _FormScreenState extends ConsumerState<FormScreen>
                         color: Colors.white,
                       ),
                     ),
-                  if (isLoading)
-                    const SizedBox(width: 8),
+                  if (formState.isSubmitting) const SizedBox(width: 8),
                   Text(context.l10n!.submit),
                 ],
               ),
@@ -103,7 +91,10 @@ class _FormScreenState extends ConsumerState<FormScreen>
         header: CustomViewHeader(
           children: [
             IconButton(
-              onPressed: () => ref.read(routerConfigProvider).pop(),
+              onPressed:
+                  formState.isSubmitting
+                      ? null
+                      : () => ref.read(routerConfigProvider).pop(),
               icon: const FaIcon(
                 FontAwesomeIcons.arrowLeft,
                 color: Colors.white,
@@ -111,33 +102,31 @@ class _FormScreenState extends ConsumerState<FormScreen>
               ),
             ),
             const SizedBox(width: 8),
-            formData.when(
-              data: (data) => Text(
-                data?.formName ?? "Form",
+            if (formState.isLoading)
+              const Text("Loading...", style: TextStyle(color: Colors.white))
+            else if (formState.error != null)
+              const Text("Error", style: TextStyle(color: Colors.white))
+            else
+              Text(
+                formState.form?.formName ?? "Form",
                 style: textTheme.titleMedium!.copyWith(
                   fontWeight: FontWeight.w500,
                   color: Colors.white,
                 ),
               ),
-              loading: () => Text(
-                "Loading...",
-                style: textTheme.titleMedium!.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white,
-                ),
-              ),
-              error: (_, __) => Text(
-                "Error",
-                style: textTheme.titleMedium!.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white,
-                ),
-              ),
-            ),
           ],
         ),
-        body: formData.when(
-          data: (form) {
+        body: Builder(
+          builder: (context) {
+            if (formState.isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (formState.error != null) {
+              return Center(child: Text("Error: ${formState.error}"));
+            }
+
+            final form = formState.form;
             if (form == null) {
               return const Center(child: Text("Form not found"));
             }
@@ -162,19 +151,18 @@ class _FormScreenState extends ConsumerState<FormScreen>
                   key: _key,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: form.fields.map((field) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: _buildFormField(field),
-                      );
-                    }).toList(),
+                    children:
+                        form.fields.map((field) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: _buildFormField(field),
+                          );
+                        }).toList(),
                   ),
                 ),
               ),
             );
           },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => Center(child: Text("Error: $error")),
         ),
       ),
     );
@@ -217,29 +205,19 @@ class _FormScreenState extends ConsumerState<FormScreen>
   void _submitForm() async {
     if (!(_key.currentState?.validate() ?? false)) return;
 
-    _setLoading(true);
-    
-    // Validate location
-    final locationStatus = await _validateLocation();
-    if (locationStatus != LocationStatus.granted) {
-      _setLoading(false);
-      return;
-    }
-
     try {
-      final form = ref.read(formControllerProvider(widget.formId)).valueOrNull;
+      final form = ref.read(formControllerProvider(widget.formId)).form;
       if (form == null) {
         context.showSnackBar("Form data not available");
-        _setLoading(false);
         return;
       }
 
       // Validate required fields
       for (var field in form.fields) {
-        if (field.formFieldRequire && 
-            (formValues[field.id] == null || formValues[field.id].toString().isEmpty)) {
+        if (field.formFieldRequire &&
+            (formValues[field.id] == null ||
+                formValues[field.id].toString().isEmpty)) {
           context.showSnackBar('Field ${field.formFieldName} is required');
-          _setLoading(false);
           return;
         }
       }
@@ -250,7 +228,6 @@ class _FormScreenState extends ConsumerState<FormScreen>
             field.formFieldRequire &&
             formValues[field.id] == null) {
           context.showSnackBar('Photo ${field.formFieldName} is required');
-          _setLoading(false);
           return;
         }
       }
@@ -261,87 +238,108 @@ class _FormScreenState extends ConsumerState<FormScreen>
             field.formFieldRequire &&
             formValues[field.id] == null) {
           context.showSnackBar('Signature ${field.formFieldName} is required');
-          _setLoading(false);
           return;
         }
       }
 
-      final formController = ref.read(formControllerProvider(widget.formId).notifier);
-      final userId = ref.read(userDataProvider).valueOrNull?.id ?? 0;
+      final locationStatus = await _validateLocation();
+      if (locationStatus != LocationStatus.granted) {
+        return;
+      }
 
-      // Convert formValues to FormData
+      final userId = ref.read(userDataProvider).valueOrNull?.id ?? 0;
       final formData = _generateFormData(form);
 
-      // Submit to API
-      await formController.submit(
-        partitionKey: "user:$userId",
-        timestamp: DateTime.now().toUtc().toIso8601String(),
-        latitude: latitude,
-        longitude: longitude,
-        description: form.formName,
-        formId: form.id,
-        data: formData,
-      );
+      await ref
+          .read(formControllerProvider(widget.formId).notifier)
+          .submit(
+            partitionKey: "user:$userId",
+            timestamp: DateTime.now().toUtc().toIso8601String(),
+            latitude: latitude,
+            longitude: longitude,
+            description: form.formName,
+            formId: form.id,
+            data: formData,
+          );
     } catch (e) {
       context.showSnackBar("Submission failed: $e");
-      _setLoading(false);
     }
   }
 
   FormData _generateFormData(FormModel form) {
     return FormData(
-      comments: form.fields
-          .where((field) =>
-              field.fieldTypeId == FieldTypes.text.value.toString() ||
-              field.fieldTypeId == FieldTypes.input.value.toString())
-          .map((field) => FormStringEntry(
-                id: field.id.toInt,
-                inputName: field.formFieldName,
-                value: formValues[field.id],
-              ))
-          .toList(),
-      switches: form.fields
-          .where((field) =>
-              field.fieldTypeId == FieldTypes.checkbox.value.toString())
-          .map((field) => FormStringEntry(
-                id: field.id.toInt,
-                inputName: field.formFieldName,
-                value: formValues[field.id]?.toString(),
-              ))
-          .toList(),
-      photos: form.fields
-          .where(
-              (field) => field.fieldTypeId == FieldTypes.image.value.toString())
-          .map((field) => FormFileEntry(
-                id: field.id.toInt,
-                inputName: field.formFieldName,
-                value: formValues[field.id]?.toString(),
-              ))
-          .toList(),
-      signatures: form.fields
-          .where((field) =>
-              field.fieldTypeId == FieldTypes.signature.value.toString())
-          .map((field) => FormFileEntry(
-                id: field.id.toInt,
-                inputName: field.formFieldName,
-                value: formValues[field.id]?.toString(),
-              ))
-          .toList(),
-      selects: form.fields
-          .where((field) => field.fieldTypeId == "6")
-          .map((field) {
-        final option = field.picklist?.options
-            .firstWhere((option) => option.id == formValues[field.id]);
-        return FormSelectEntry(
-          id: field.id.toInt,
-          inputName: field.formFieldName,
-          pickListId: field.formPicklistId?.toInt ?? 0,
-          pickListName: field.picklist?.options.first.name,
-          value: option?.id.toString(),
-          pickListOptionName: option?.name,
-          pos: int.parse(formValues[field.id] ?? "0"),
-        );
-      }).toList(),
+      comments:
+          form.fields
+              .where(
+                (field) =>
+                    field.fieldTypeId == FieldTypes.text.value.toString() ||
+                    field.fieldTypeId == FieldTypes.input.value.toString(),
+              )
+              .map(
+                (field) => FormStringEntry(
+                  id: field.id.toInt,
+                  inputName: field.formFieldName,
+                  value: formValues[field.id],
+                ),
+              )
+              .toList(),
+      switches:
+          form.fields
+              .where(
+                (field) =>
+                    field.fieldTypeId == FieldTypes.checkbox.value.toString(),
+              )
+              .map(
+                (field) => FormStringEntry(
+                  id: field.id.toInt,
+                  inputName: field.formFieldName,
+                  value: formValues[field.id]?.toString(),
+                ),
+              )
+              .toList(),
+      photos:
+          form.fields
+              .where(
+                (field) =>
+                    field.fieldTypeId == FieldTypes.image.value.toString(),
+              )
+              .map(
+                (field) => FormFileEntry(
+                  id: field.id.toInt,
+                  inputName: field.formFieldName,
+                  value: formValues[field.id]?.toString(),
+                ),
+              )
+              .toList(),
+      signatures:
+          form.fields
+              .where(
+                (field) =>
+                    field.fieldTypeId == FieldTypes.signature.value.toString(),
+              )
+              .map(
+                (field) => FormFileEntry(
+                  id: field.id.toInt,
+                  inputName: field.formFieldName,
+                  value: formValues[field.id]?.toString(),
+                ),
+              )
+              .toList(),
+      selects:
+          form.fields.where((field) => field.fieldTypeId == "6").map((field) {
+            final option = field.picklist?.options.firstWhere(
+              (option) => option.id == formValues[field.id],
+            );
+            return FormSelectEntry(
+              id: field.id.toInt,
+              inputName: field.formFieldName,
+              pickListId: field.formPicklistId?.toInt ?? 0,
+              pickListName: field.picklist?.options.first.name,
+              value: option?.id.toString(),
+              pickListOptionName: option?.name,
+              pos: int.parse(formValues[field.id] ?? "0"),
+            );
+          }).toList(),
     );
   }
 

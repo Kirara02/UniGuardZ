@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:ugz_app/src/constants/gen/assets.gen.dart';
-import 'package:ugz_app/src/features/home/presentation/home/controller/home_controller.dart';
+import 'package:ugz_app/src/features/home/presentation/forms/controller/forms_controller.dart';
 import 'package:ugz_app/src/routes/router_config.dart';
 import 'package:ugz_app/src/utils/extensions/custom_extensions.dart';
 import 'package:ugz_app/src/utils/misc/print.dart';
@@ -20,12 +20,14 @@ class _FormsScreenState extends ConsumerState<FormsScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => ref.read(formsProvider.notifier).getForms());
+    Future.microtask(
+      () => ref.read(formsControllerProvider.notifier).getForms(),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final activities = ref.watch(formsProvider);
+    final activities = ref.watch(formsControllerProvider);
 
     return CustomView(
       header: CustomViewHeader(
@@ -50,7 +52,7 @@ class _FormsScreenState extends ConsumerState<FormsScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          ref.read(formsProvider.notifier).getForms();
+          ref.read(formsControllerProvider.notifier).getForms();
         },
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

@@ -11,30 +11,61 @@ import 'package:ugz_app/src/utils/misc/result.dart';
 
 part 'form_controller.g.dart';
 
+class CustomFormState {
+  final FormModel? form;
+  final bool isSubmitting;
+  final bool isSubmitSuccess;
+  final String? error;
+  final bool isLoading;
+
+  const CustomFormState({
+    this.form,
+    this.isSubmitting = false,
+    this.isSubmitSuccess = false,
+    this.error,
+    this.isLoading = false,
+  });
+
+  CustomFormState copyWith({
+    FormModel? form,
+    bool? isSubmitting,
+    bool? isSubmitSuccess,
+    String? error,
+    bool? isLoading,
+  }) {
+    return CustomFormState(
+      form: form ?? this.form,
+      isSubmitting: isSubmitting ?? this.isSubmitting,
+      isSubmitSuccess: isSubmitSuccess ?? this.isSubmitSuccess,
+      error: error,
+      isLoading: isLoading ?? this.isLoading,
+    );
+  }
+}
+
 @riverpod
 class FormController extends _$FormController {
   @override
-  FutureOr<FormModel?> build(String? formId) {
+  CustomFormState build(String? formId) {
     if (formId != null) {
       _fetchFormDetail(formId);
     }
-    return null;
+    return const CustomFormState(isLoading: true);
   }
 
   Future<void> _fetchFormDetail(String formId) async {
-    state = const AsyncLoading();
     try {
       final getFormDetail = ref.read(getFormByIdProvider);
       final result = await getFormDetail(formId);
 
       switch (result) {
-        case Success(value: final activity):
-          state = AsyncData(activity);
+        case Success(value: final form):
+          state = state.copyWith(form: form, isLoading: false);
         case Failed(message: final message):
-          state = AsyncError(Exception(message), StackTrace.current);
+          state = state.copyWith(error: message, isLoading: false);
       }
-    } catch (e, stack) {
-      state = AsyncError(e, stack);
+    } catch (e) {
+      state = state.copyWith(error: e.toString(), isLoading: false);
     }
   }
 
@@ -47,7 +78,12 @@ class FormController extends _$FormController {
     required String formId,
     required FormData data,
   }) async {
-    state = const AsyncLoading();
+    // Set submitting state
+    state = state.copyWith(
+      isSubmitting: true,
+      isSubmitSuccess: false,
+      error: null,
+    );
 
     final List<FormField> fields = [];
     final List<FormPhoto> photos = [];
@@ -59,7 +95,7 @@ class FormController extends _$FormController {
           id: e.id.toString(),
           fieldTypeId: "2", // Text
           fieldTypeName: "text",
-          taskFieldName: e.inputName!,
+          formFieldName: e.inputName!,
           value: e.value ?? "",
         ),
       ),
@@ -72,7 +108,7 @@ class FormController extends _$FormController {
           id: e.id.toString(),
           fieldTypeId: "3", // Checkbox
           fieldTypeName: "checkbox",
-          taskFieldName: e.inputName!,
+          formFieldName: e.inputName!,
           value: (e.value == "true" || e.value == "1") ? "1" : "0",
         ),
       ),
@@ -85,14 +121,14 @@ class FormController extends _$FormController {
       ),
     );
 
-    // Tambahkan foto ke fields sebagai referensi
+    // Add photos to fields as references
     fields.addAll(
       data.photos.map(
         (e) => FormField(
           id: e.id.toString(),
           fieldTypeId: "4",
           fieldTypeName: "image",
-          taskFieldName: e.inputName!,
+          formFieldName: e.inputName!,
           value: "file_${e.id}",
         ),
       ),
@@ -111,7 +147,7 @@ class FormController extends _$FormController {
           id: e.id.toString(),
           fieldTypeId: "5",
           fieldTypeName: "signature",
-          taskFieldName: "Signature ${e.id}",
+          formFieldName: "Signature ${e.id}",
           value: "signature_${e.id}",
         ),
       ),
@@ -124,7 +160,7 @@ class FormController extends _$FormController {
           id: e.id.toString(),
           fieldTypeId: "6",
           fieldTypeName: "options",
-          taskFieldName: e.inputName!,
+          formFieldName: e.inputName!,
           value: e.value ?? "",
         ),
       ),
@@ -142,10 +178,8 @@ class FormController extends _$FormController {
       );
 
       if (success) {
-        // state = const AsyncData([]); // Success state
-        print("Success");
+        state = state.copyWith(isSubmitting: false, isSubmitSuccess: true);
       } else {
-        print('API submission failed, storing in local DB');
         // If API fails, store in local DB
         await insertTask(
           params: InsertPendingFormParams(
@@ -160,33 +194,37 @@ class FormController extends _$FormController {
             ),
           ),
         );
+        state = state.copyWith(isSubmitting: false, isSubmitSuccess: true);
       }
     } catch (e) {
-      print('Error during submission: $e');
       // On error, store in local DB
-      await insertTask(
-        params: InsertPendingFormParams(
-          record: FormSubmitRecord(
-            formId: formId,
-            partitionKey: partitionKey,
-            timestamp: timestamp,
-            latitude: latitude,
-            longitude: longitude,
-            description: description,
-            data: data,
+      try {
+        await insertTask(
+          params: InsertPendingFormParams(
+            record: FormSubmitRecord(
+              formId: formId,
+              partitionKey: partitionKey,
+              timestamp: timestamp,
+              latitude: latitude,
+              longitude: longitude,
+              description: description,
+              data: data,
+            ),
           ),
-        ),
-      );
+        );
+        state = state.copyWith(isSubmitting: false, isSubmitSuccess: true);
+      } catch (innerError) {
+        state = state.copyWith(
+          isSubmitting: false,
+          error: "Failed to submit: $innerError",
+        );
+      }
     }
   }
 
   Future<void> insertTask({required InsertPendingFormParams params}) async {
-    // state = const AsyncLoading();
     final insert = ref.read(dbInsertPendingFormProvider);
-    // state = await AsyncValue.guard(() async {
-    //   await insert(params);
-    //   // return getHistories();
-    // });
+    await insert(params);
   }
 
   Future<bool> submitToApi({

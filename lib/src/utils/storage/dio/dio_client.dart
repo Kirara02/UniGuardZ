@@ -200,8 +200,6 @@ class DioClient {
         onReceiveProgress: onReceiveProgress,
       );
 
-      print("Response Text:\n${response.data}");
-
       // For successful responses, parse as normal
       if (response.statusCode != null &&
           response.statusCode! >= 200 &&

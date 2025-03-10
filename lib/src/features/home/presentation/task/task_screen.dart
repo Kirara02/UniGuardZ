@@ -27,15 +27,8 @@ class _TaskScreenState extends ConsumerState<TaskScreen>
   final Map<String, dynamic> formValues = {};
   double? latitude;
   double? longitude;
-  bool isLoading = false;
 
   final Map<String, SignatureController> _signatureControllers = {};
-
-  void _setLoading(bool value) {
-    setState(() {
-      isLoading = value;
-    });
-  }
 
   @override
   void dispose() {
@@ -47,15 +40,16 @@ class _TaskScreenState extends ConsumerState<TaskScreen>
 
   @override
   Widget build(BuildContext context) {
-    final taskAsync = ref.watch(taskControllerProvider(widget.taskId));
+    // Use the custom TaskState
+    final taskState = ref.watch(taskControllerProvider(widget.taskId));
 
+    // Listen for state changes
     ref.listen(taskControllerProvider(widget.taskId), (prev, next) {
-      if (prev is AsyncLoading && next is AsyncData) {
-        _setLoading(false);
+      if (!prev!.isSubmitSuccess && next.isSubmitSuccess) {
         _showSuccessDialog();
       }
 
-      if (next is AsyncError) {
+      if (next.error != null && prev.error != next.error) {
         context.showSnackBar("An error occurred: ${next.error}");
       }
     });
@@ -69,11 +63,15 @@ class _TaskScreenState extends ConsumerState<TaskScreen>
             padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
             child: ElevatedButton(
               onPressed:
-                  isLoading || taskAsync is! AsyncData ? null : _submitForm,
+                  taskState.isSubmitting ||
+                          taskState.isLoading ||
+                          taskState.task == null
+                      ? null
+                      : _submitForm,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  if (isLoading)
+                  if (taskState.isSubmitting)
                     const SizedBox(
                       height: 20,
                       width: 20,
@@ -82,7 +80,7 @@ class _TaskScreenState extends ConsumerState<TaskScreen>
                         color: Colors.white,
                       ),
                     ),
-                  if (isLoading) const SizedBox(width: 8),
+                  if (taskState.isSubmitting) const SizedBox(width: 8),
                   const Text("Submit"),
                 ],
               ),
@@ -93,7 +91,9 @@ class _TaskScreenState extends ConsumerState<TaskScreen>
           children: [
             IconButton(
               onPressed:
-                  isLoading ? null : () => ref.read(routerConfigProvider).pop(),
+                  taskState.isSubmitting
+                      ? null
+                      : () => ref.read(routerConfigProvider).pop(),
               icon: const FaIcon(
                 FontAwesomeIcons.arrowLeft,
                 color: Colors.white,
@@ -101,30 +101,31 @@ class _TaskScreenState extends ConsumerState<TaskScreen>
               ),
             ),
             const SizedBox(width: 8),
-            taskAsync.when(
-              data:
-                  (task) => Text(
-                    task?.taskName ?? "Task",
-                    style: context.textTheme.titleMedium!.copyWith(
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
-                    ),
-                  ),
-              loading:
-                  () => const Text(
-                    "Loading...",
-                    style: TextStyle(color: Colors.white),
-                  ),
-              error:
-                  (_, __) => const Text(
-                    "Error",
-                    style: TextStyle(color: Colors.white),
-                  ),
-            ),
+            if (taskState.isLoading)
+              const Text("Loading...", style: TextStyle(color: Colors.white))
+            else if (taskState.error != null)
+              const Text("Error", style: TextStyle(color: Colors.white))
+            else
+              Text(
+                taskState.task?.taskName ?? "Task",
+                style: context.textTheme.titleMedium!.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                ),
+              ),
           ],
         ),
-        body: taskAsync.when(
-          data: (task) {
+        body: Builder(
+          builder: (context) {
+            if (taskState.isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (taskState.error != null) {
+              return Center(child: Text("Error: ${taskState.error}"));
+            }
+
+            final task = taskState.task;
             if (task == null) {
               return const Center(child: Text("Task not found"));
             }
@@ -161,8 +162,6 @@ class _TaskScreenState extends ConsumerState<TaskScreen>
               ),
             );
           },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => Center(child: Text("Error: $error")),
         ),
       ),
     );
@@ -205,19 +204,15 @@ class _TaskScreenState extends ConsumerState<TaskScreen>
   void _submitForm() async {
     if (!(_key.currentState?.validate() ?? false)) return;
 
-    _setLoading(true);
-
     try {
-      final task = ref.read(taskControllerProvider(widget.taskId)).valueOrNull;
+      final task = ref.read(taskControllerProvider(widget.taskId)).task;
       if (task == null) {
         context.showSnackBar("Task data not available");
-        _setLoading(false);
         return;
       }
 
       final locationStatus = await _validateLocation();
       if (locationStatus != LocationStatus.granted) {
-        _setLoading(false);
         return;
       }
 
@@ -237,7 +232,6 @@ class _TaskScreenState extends ConsumerState<TaskScreen>
           );
     } catch (e) {
       context.showSnackBar("Submission failed: $e");
-      _setLoading(false);
     }
   }
 
@@ -286,6 +280,21 @@ class _TaskScreenState extends ConsumerState<TaskScreen>
                   id: int.tryParse(field.id) ?? 0,
                   inputName: field.taskFieldName,
                   value: formValues[field.id]?.toString() ?? "",
+                ),
+              )
+              .toList(),
+      selects:
+          task.fields
+              .where((field) => field.fieldTypeId == "6")
+              .map(
+                (field) => FormSelectEntry(
+                  id: int.tryParse(field.id) ?? 0,
+                  inputName: field.taskFieldName,
+                  pickListId: 0,
+                  pickListName: "",
+                  value: formValues[field.id]?.toString() ?? "",
+                  pickListOptionName: "",
+                  pos: 0,
                 ),
               )
               .toList(),

@@ -1,6 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:ugz_app/src/utils/misc/print.dart';
+import 'package:http_parser/http_parser.dart';
+import 'package:mime/mime.dart';
+import 'package:path/path.dart' as path;
 
 class SubmitTaskParams {
   final String id;
@@ -35,11 +38,27 @@ class SubmitTaskParams {
 
     for (var photo in photos) {
       if (photo.filePath != null && photo.filePath!.isNotEmpty) {
-        files["file_${photo.id}"] = await MultipartFile.fromFile(
-            photo.filePath!,
-            filename: "image-${photo.id}.jpg");
+        final File file = File(photo.filePath!);
 
-        printIfDebug(files["file_${photo.id}"]?.headers);
+        if (await file.exists()) {
+          // Determine content type
+          final mimeType = lookupMimeType(photo.filePath!) ?? 'image/jpeg';
+
+          // Ensure we're only sending image files
+          if (mimeType.startsWith('image/')) {
+            final filename = path.basename(photo.filePath!);
+
+            files["file_${photo.id}"] = await MultipartFile.fromFile(
+              photo.filePath!,
+              filename: "image-${photo.id}${path.extension(filename)}",
+              contentType: MediaType.parse(mimeType),
+            );
+          } else {
+            print('Skipping non-image file: ${photo.filePath}');
+          }
+        } else {
+          print('File does not exist: ${photo.filePath}');
+        }
       }
     }
     return files;
@@ -62,12 +81,12 @@ class TaskField {
   });
 
   Map<String, dynamic> toJson() => {
-        "id": id,
-        "field_type_id": fieldTypeId,
-        "field_type_name": fieldTypeName,
-        "task_field_name": taskFieldName,
-        "value": value,
-      };
+    "id": id,
+    "field_type_id": fieldTypeId,
+    "field_type_name": fieldTypeName,
+    "task_field_name": taskFieldName,
+    "value": value,
+  };
 }
 
 class TaskPhoto {

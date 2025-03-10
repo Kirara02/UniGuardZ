@@ -19,6 +19,8 @@ class SubmitForm implements UseCase<Result<String>, SubmitFormParams> {
   @override
   Future<Result<String>> call(SubmitFormParams params) async {
     try {
+      final multipartFiles = await params.toMultipartFiles();
+
       // Konversi params ke FormData
       final formData = FormData.fromMap({
         "data": json.encode({
@@ -27,7 +29,7 @@ class SubmitForm implements UseCase<Result<String>, SubmitFormParams> {
           "original_submitted_time": params.timestamp,
           "fields": params.fields.map((field) => field.toJson()).toList(),
         }),
-        ...await params.toMultipartFiles(),
+        ...multipartFiles,
       });
 
       final response = await _formsRepository.submitForm(

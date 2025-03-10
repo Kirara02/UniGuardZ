@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:ugz_app/src/constants/gen/assets.gen.dart';
 import 'package:ugz_app/src/features/home/presentation/home/controller/home_controller.dart';
+import 'package:ugz_app/src/features/home/presentation/tasks/controller/tasks_controller.dart';
 import 'package:ugz_app/src/routes/router_config.dart';
 import 'package:ugz_app/src/utils/extensions/custom_extensions.dart';
 import 'package:ugz_app/src/utils/misc/print.dart';
@@ -20,12 +21,14 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => ref.read(tasksProvider.notifier).getTasks());
+    Future.microtask(
+      () => ref.read(tasksControllerProvider.notifier).getTasks(),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final activities = ref.watch(tasksProvider);
+    final activities = ref.watch(tasksControllerProvider);
 
     return CustomView(
       header: CustomViewHeader(
@@ -50,7 +53,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          ref.read(tasksProvider.notifier).getTasks();
+          ref.read(tasksControllerProvider.notifier).getTasks();
         },
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

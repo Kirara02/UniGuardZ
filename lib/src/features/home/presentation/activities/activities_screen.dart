@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:ugz_app/src/constants/gen/assets.gen.dart';
-import 'package:ugz_app/src/features/home/presentation/home/controller/home_controller.dart';
+import 'package:ugz_app/src/features/home/presentation/activities/controller/activities_controller.dart';
 import 'package:ugz_app/src/routes/router_config.dart';
 import 'package:ugz_app/src/utils/extensions/custom_extensions.dart';
 import 'package:ugz_app/src/utils/misc/print.dart';
@@ -22,13 +22,13 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
   void initState() {
     super.initState();
     Future.microtask(
-      () => ref.read(activitiesProvider.notifier).getActivities(),
+      () => ref.read(activitiesControllerProvider.notifier).getActivities(),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final activities = ref.watch(activitiesProvider);
+    final activities = ref.watch(activitiesControllerProvider);
 
     return CustomView(
       header: CustomViewHeader(
@@ -53,7 +53,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          ref.read(activitiesProvider.notifier).getActivities();
+          ref.read(activitiesControllerProvider.notifier).getActivities();
         },
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
