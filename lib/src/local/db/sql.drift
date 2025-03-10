@@ -1,0 +1,46 @@
+
+CREATE TABLE blobs (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    partition_key TEXT NOT NULL,
+    size INTEGER NOT NULL,
+    chunks INTEGER NOT NULL
+) AS Blob;
+
+CREATE TABLE blob_chunks (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    owner_blob_id INTEGER NOT NULL REFERENCES blobs (id) ON DELETE CASCADE,
+    chunk INTEGER NOT NULL,
+    data BLOB NOT NULL
+) AS BlobChunk;
+
+CREATE INDEX index_blob_chunks_owner_blob_id ON blob_chunks (owner_blob_id);
+
+CREATE TABLE pending_locations (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    partition_key TEXT NOT NULL,
+    timestamp TEXT NOT NULL,
+    latitude REAL NOT NULL,
+    longitude REAL NOT NULL
+) AS PendingLocations;
+
+CREATE TABLE pending_checkpoints (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    partition_key TEXT NOT NULL,
+    timestamp TEXT NOT NULL,
+    latitude REAL,
+    longitude REAL,
+    type TEXT NOT NULL,
+    data BLOB NOT NULL
+) AS PendingCheckpoints;
+
+CREATE TABLE pending_forms (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    partition_key TEXT NOT NULL,
+    timestamp TEXT NOT NULL,
+    latitude REAL,
+    longitude REAL,
+    description TEXT NOT NULL,
+    category INTEGER NOT NULL,
+    form_id TEXT NOT NULL,
+    data TEXT NOT NULL
+) AS PendingForms;

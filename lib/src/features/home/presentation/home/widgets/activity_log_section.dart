@@ -1,0 +1,83 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gap/gap.dart';
+import 'package:ugz_app/src/constants/gen/assets.gen.dart';
+import 'package:ugz_app/src/features/home/presentation/home/controller/home_controller.dart';
+import 'package:ugz_app/src/routes/router_config.dart';
+import 'package:ugz_app/src/utils/extensions/custom_extensions.dart';
+import 'package:ugz_app/src/utils/misc/print.dart';
+import 'package:ugz_app/src/widgets/list_item.dart';
+import 'package:ugz_app/src/widgets/navigator_header.dart';
+
+class ActivityLogSection extends ConsumerStatefulWidget {
+  const ActivityLogSection({super.key});
+
+  @override
+  ConsumerState<ActivityLogSection> createState() => _ActivityLogSectionState();
+}
+
+class _ActivityLogSectionState extends ConsumerState<ActivityLogSection> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(
+      () => ref.read(activitiesProvider.notifier).getActivities(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final activities = ref.watch(activitiesProvider);
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        ref.read(activitiesProvider.notifier).getActivities();
+      },
+      child: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        children: [
+          NavigatorHeader(title: context.l10n!.activity_log),
+          const Gap(16),
+          activities.when(
+            data: (data) {
+              if (data.isEmpty) {
+                return const Center(child: Text("Forms empty"));
+              }
+              return ListView.separated(
+                itemCount: data.length,
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                physics: const BouncingScrollPhysics(),
+                separatorBuilder:
+                    (context, index) => const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  var activity = data[index];
+                  return ListItem(
+                    // onPressed: () => ref
+                    //     .read(routerProvider)
+                    //     .push(Routes.ACTIVITY, extra: activity),
+                    onPressed: () => ActivityRoute(activityId: activity.id).go(context),
+                    title: activity.activityName,
+                    prefixIconPath: Assets.icons.guard.path,
+                  );
+                },
+              );
+            },
+            loading:
+                () => SizedBox(
+                  height: context.height * .9,
+                  child: const Center(child: CircularProgressIndicator()),
+                ),
+            error: (e, stack) {
+              printIfDebug('Error fetching activities: $e');
+              return SizedBox(
+                height: context.height * .9,
+                child: Center(child: Text('Error: $e')),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
