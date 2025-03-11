@@ -7,6 +7,7 @@ import 'package:ugz_app/src/features/auth/providers/user_data_provider.dart';
 import 'package:ugz_app/src/features/home/domain/model/form_model.dart';
 import 'package:ugz_app/src/features/home/presentation/form/controller/form_controller.dart';
 import 'package:ugz_app/src/features/home/widgets/mixin/form_field_mixin.dart';
+import 'package:ugz_app/src/features/home/widgets/success_submit_dialog.dart';
 import 'package:ugz_app/src/global_providers/location_providers.dart';
 import 'package:ugz_app/src/local/record/form_data.dart';
 import 'package:ugz_app/src/routes/router_config.dart';
@@ -47,7 +48,7 @@ class _FormScreenState extends ConsumerState<FormScreen>
     // Listen for state changes
     ref.listen(formControllerProvider(widget.formId), (prev, next) {
       if (!prev!.isSubmitSuccess && next.isSubmitSuccess) {
-        _showSuccessDialog();
+        showSuccessDialog(context, ref, formType: "Form");
       }
 
       if (next.error != null && prev.error != next.error) {
@@ -262,7 +263,7 @@ class _FormScreenState extends ConsumerState<FormScreen>
             data: formData,
           );
     } catch (e) {
-      context.showSnackBar("Submission failed: $e");
+      context.showSnackBar("Error: $e");
     }
   }
 
@@ -340,27 +341,6 @@ class _FormScreenState extends ConsumerState<FormScreen>
               pos: int.parse(formValues[field.id] ?? "0"),
             );
           }).toList(),
-    );
-  }
-
-  void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Success'),
-          content: const Text('Your form has been submitted successfully.'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                ref.read(routerConfigProvider).pop();
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
     );
   }
 }

@@ -5,6 +5,7 @@ import 'package:ugz_app/src/features/auth/providers/user_data_provider.dart';
 import 'package:ugz_app/src/features/home/presentation/activity/controller/activity_controller.dart';
 import 'package:ugz_app/src/features/home/widgets/form/photo_field.dart';
 import 'package:ugz_app/src/features/home/widgets/form/text_field.dart';
+import 'package:ugz_app/src/features/home/widgets/success_submit_dialog.dart';
 import 'package:ugz_app/src/global_providers/location_providers.dart';
 import 'package:ugz_app/src/local/record/form_data.dart';
 import 'package:ugz_app/src/routes/router_config.dart';
@@ -26,27 +27,21 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   String? photoPath;
   double? latitude;
   double? longitude;
-  bool isLoading = false;
-
-  void _setLoading(bool value) {
-    setState(() {
-      isLoading = value;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
-    final activityAsync = ref.watch(
+    // Use the custom ActivityState
+    final activityState = ref.watch(
       activityControllerProvider(widget.activityId),
     );
 
+    // Listen for state changes
     ref.listen(activityControllerProvider(widget.activityId), (prev, next) {
-      if (prev is AsyncLoading && next is AsyncData) {
-        _setLoading(false);
-        _showSuccessDialog();
+      if (!prev!.isSubmitSuccess && next.isSubmitSuccess) {
+        showSuccessDialog(context, ref, formType: "Activity");
       }
 
-      if (next is AsyncError) {
+      if (next.error != null && prev.error != next.error) {
         context.showSnackBar("An error occurred: ${next.error}");
       }
     });
@@ -58,18 +53,38 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
           child: Container(
             padding: const EdgeInsets.all(8),
             child: ElevatedButton(
-              onPressed: isLoading ? null : _submitForm,
-              child:
-                  isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : Text("Submit"),
+              onPressed:
+                  activityState.isSubmitting ||
+                          activityState.isLoading ||
+                          activityState.activity == null
+                      ? null
+                      : _submitForm,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (activityState.isSubmitting)
+                    const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    ),
+                  if (activityState.isSubmitting) const SizedBox(width: 8),
+                  const Text("Submit"),
+                ],
+              ),
             ),
           ),
         ),
         header: CustomViewHeader(
           children: [
             IconButton(
-              onPressed: isLoading ? null : () => HomeRoute().go(context),
+              onPressed:
+                  activityState.isSubmitting
+                      ? null
+                      : () => ref.watch(routerConfigProvider).pop(),
               icon: const FaIcon(
                 FontAwesomeIcons.arrowLeft,
                 color: Colors.white,
@@ -77,33 +92,33 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
               ),
             ),
             const SizedBox(width: 8),
-            activityAsync.when(
-              data:
-                  (activity) => Text(
-                    activity?.activityName ?? "Activity",
-                    style: context.textTheme.titleMedium!.copyWith(
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
-                    ),
-                  ),
-              loading:
-                  () => const Text(
-                    "Loading...",
-                    style: TextStyle(color: Colors.white),
-                  ),
-              error:
-                  (_, __) => const Text(
-                    "Error",
-                    style: TextStyle(color: Colors.white),
-                  ),
-            ),
+            if (activityState.isLoading)
+              const Text("Loading...", style: TextStyle(color: Colors.white))
+            else if (activityState.error != null)
+              const Text("Error", style: TextStyle(color: Colors.white))
+            else
+              Text(
+                activityState.activity?.activityName ?? "Activity",
+                style: context.textTheme.titleMedium!.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                ),
+              ),
           ],
         ),
-        body: activityAsync.when(
-          data: (activity) {
+        body: Builder(
+          builder: (context) {
+            if (activityState.isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (activityState.error != null) {
+              return Center(child: Text("Error: ${activityState.error}"));
+            }
+
+            final activity = activityState.activity;
             if (activity == null) {
-              // return const Center(child: Text("Activity not found"));
-              return const SizedBox.shrink();
+              return const Center(child: Text("Activity not found"));
             }
 
             return Padding(
@@ -146,8 +161,6 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
               ),
             );
           },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => Center(child: Text("Error: $error")),
         ),
       ),
     );
@@ -177,31 +190,40 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
 
   void _submitForm() async {
     if (!(_key.currentState?.validate() ?? false)) return;
-    _setLoading(true);
 
     try {
-      final userId = ref.read(userDataProvider).valueOrNull?.id;
       final activity =
-          ref.read(activityControllerProvider(widget.activityId)).valueOrNull;
-
+          ref.read(activityControllerProvider(widget.activityId)).activity;
       if (activity == null) {
         context.showSnackBar("Activity data not available");
-        _setLoading(false);
+        return;
+      }
+
+      // Validate required fields
+      if (activity.commentRequired &&
+          (commentValue == null || commentValue!.isEmpty)) {
+        context.showSnackBar("Comment is required");
+        return;
+      }
+
+      if (activity.photoRequired && photoPath == null) {
+        context.showSnackBar("Photo is required");
         return;
       }
 
       if (activity.gpsRequired) {
         final locationStatus = await _validateLocation();
         if (locationStatus != LocationStatus.granted) {
-          _setLoading(false);
           return;
         }
       }
 
+      final userId = ref.read(userDataProvider).valueOrNull?.id ?? 0;
+
       await ref
           .read(activityControllerProvider(widget.activityId).notifier)
           .submit(
-            partitionKey: "user:${userId ?? 0}",
+            partitionKey: "user:$userId",
             timestamp: DateTime.now().toUtc().toIso8601String(),
             latitude: latitude,
             longitude: longitude,
@@ -228,34 +250,13 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                         ),
                       ]
                       : [],
+              switches: [],
+              signatures: [],
+              selects: [],
             ),
           );
     } catch (e) {
-      if (mounted) {
-        context.showSnackBar("Submission failed: \$e");
-      }
-    } finally {
-      _setLoading(false);
+      context.showSnackBar("Error: $e");
     }
-  }
-
-  void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Success'),
-            content: const Text('Your activity has been added successfully.'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  HomeRoute().go(context);
-                },
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-    );
   }
 }

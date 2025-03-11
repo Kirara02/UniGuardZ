@@ -13,30 +13,61 @@ import 'package:ugz_app/src/utils/misc/result.dart';
 
 part 'activity_controller.g.dart';
 
+class ActivityState {
+  final ActivityModel? activity;
+  final bool isSubmitting;
+  final bool isSubmitSuccess;
+  final String? error;
+  final bool isLoading;
+
+  const ActivityState({
+    this.activity,
+    this.isSubmitting = false,
+    this.isSubmitSuccess = false,
+    this.error,
+    this.isLoading = false,
+  });
+
+  ActivityState copyWith({
+    ActivityModel? activity,
+    bool? isSubmitting,
+    bool? isSubmitSuccess,
+    String? error,
+    bool? isLoading,
+  }) {
+    return ActivityState(
+      activity: activity ?? this.activity,
+      isSubmitting: isSubmitting ?? this.isSubmitting,
+      isSubmitSuccess: isSubmitSuccess ?? this.isSubmitSuccess,
+      error: error,
+      isLoading: isLoading ?? this.isLoading,
+    );
+  }
+}
+
 @riverpod
 class ActivityController extends _$ActivityController {
   @override
-  FutureOr<ActivityModel?> build(String? activityId) {
+  ActivityState build(String? activityId) {
     if (activityId != null) {
       _fetchActivityDetail(activityId);
     }
-    return null;
+    return const ActivityState(isLoading: true);
   }
 
   Future<void> _fetchActivityDetail(String activityId) async {
-    state = const AsyncLoading();
     try {
       final getActivityDetail = ref.read(getActivityByIdProvider);
       final result = await getActivityDetail(activityId);
 
       switch (result) {
         case Success(value: final activity):
-          state = AsyncData(activity);
+          state = state.copyWith(activity: activity, isLoading: false);
         case Failed(message: final message):
-          state = AsyncError(Exception(message), StackTrace.current);
+          state = state.copyWith(error: message, isLoading: false);
       }
-    } catch (e, stack) {
-      state = AsyncError(e, stack);
+    } catch (e) {
+      state = state.copyWith(error: e.toString(), isLoading: false);
     }
   }
 
@@ -49,10 +80,8 @@ class ActivityController extends _$ActivityController {
     required String formId,
     required FormData data,
   }) async {
-    // Store the current activity data before setting loading state
-    final currentActivity = state.valueOrNull;
+    state = state.copyWith(isSubmitting: true, error: null);
 
-    state = const AsyncLoading();
     try {
       final String? comment =
           data.comments.isNotEmpty ? data.comments.first.value : null;
@@ -84,13 +113,7 @@ class ActivityController extends _$ActivityController {
         );
       }
 
-      // After submission, restore the activity data with a success flag
-      if (currentActivity != null) {
-        state = AsyncData(currentActivity);
-      } else {
-        // If we don't have the activity data, fetch it again
-        await _fetchActivityDetail(formId);
-      }
+      state = state.copyWith(isSubmitting: false, isSubmitSuccess: true);
     } catch (e) {
       await _insertToLocalDb(
         params: InsertPendingActivityParams(
@@ -106,12 +129,7 @@ class ActivityController extends _$ActivityController {
         ),
       );
 
-      // After handling the error, restore the activity data
-      if (currentActivity != null) {
-        state = AsyncData(currentActivity);
-      } else {
-        state = AsyncError(e, StackTrace.current);
-      }
+      state = state.copyWith(isSubmitting: false, error: e.toString());
     }
   }
 

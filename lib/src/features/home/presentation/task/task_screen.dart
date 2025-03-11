@@ -7,6 +7,7 @@ import 'package:ugz_app/src/features/auth/providers/user_data_provider.dart';
 import 'package:ugz_app/src/features/home/domain/model/task_model.dart';
 import 'package:ugz_app/src/features/home/presentation/task/controller/task_controller.dart';
 import 'package:ugz_app/src/features/home/widgets/mixin/form_field_mixin.dart';
+import 'package:ugz_app/src/features/home/widgets/success_submit_dialog.dart';
 import 'package:ugz_app/src/global_providers/location_providers.dart';
 import 'package:ugz_app/src/local/record/form_data.dart';
 import 'package:ugz_app/src/routes/router_config.dart';
@@ -46,7 +47,7 @@ class _TaskScreenState extends ConsumerState<TaskScreen>
     // Listen for state changes
     ref.listen(taskControllerProvider(widget.taskId), (prev, next) {
       if (!prev!.isSubmitSuccess && next.isSubmitSuccess) {
-        _showSuccessDialog();
+        showSuccessDialog(context, ref, formType: "Task");
       }
 
       if (next.error != null && prev.error != next.error) {
@@ -231,7 +232,7 @@ class _TaskScreenState extends ConsumerState<TaskScreen>
             data: formData,
           );
     } catch (e) {
-      context.showSnackBar("Submission failed: $e");
+      context.showSnackBar("Error: $e");
     }
   }
 
@@ -298,26 +299,6 @@ class _TaskScreenState extends ConsumerState<TaskScreen>
                 ),
               )
               .toList(),
-    );
-  }
-
-  void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Success'),
-            content: const Text('Your task has been submitted successfully.'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  ref.read(routerConfigProvider).pop();
-                },
-                child: const Text('OK'),
-              ),
-            ],
-          ),
     );
   }
 }
