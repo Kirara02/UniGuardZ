@@ -43,7 +43,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
           ),
           const SizedBox(width: 8),
           Text(
-            "Activities",
+            context.l10n!.activity_log,
             style: context.textTheme.titleMedium!.copyWith(
               fontWeight: FontWeight.w500,
               color: Colors.white,

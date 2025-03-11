@@ -13,6 +13,9 @@
   "tasks": "タスク",
   "forms": "フォーム",
   "activity_log": "アクティビティログ",
+  "task": "タスク",
+  "form": "フォーム",
+  "activity": "アクティビティ",
   "history": "履歴",
   "uploaded": "アップロード済み",
   "pending": "保留中",
@@ -57,5 +60,7 @@
   "no_updates_available": "最新バージョンを使用しています",
   "update_failed": "アップデートに失敗しました",
   "confirm_exit_title": "終了の確認",
-  "confirm_exit_message": "アプリを終了してもよろしいですか？"
+  "confirm_exit_message": "アプリを終了してもよろしいですか？",
+  "form_success_title": "{type}が送信されました",
+  "form_success_message": "あなたの{type}ログが正常に記録されました。"
 }

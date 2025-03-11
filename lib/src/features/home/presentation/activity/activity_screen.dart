@@ -38,11 +38,11 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     // Listen for state changes
     ref.listen(activityControllerProvider(widget.activityId), (prev, next) {
       if (!prev!.isSubmitSuccess && next.isSubmitSuccess) {
-        showSuccessDialog(context, ref, formType: "Activity");
+        showSuccessDialog(context, ref, formType: context.l10n!.activity);
       }
 
       if (next.error != null && prev.error != next.error) {
-        context.showSnackBar("An error occurred: ${next.error}");
+        context.showSnackBar("Error: ${next.error}");
       }
     });
 

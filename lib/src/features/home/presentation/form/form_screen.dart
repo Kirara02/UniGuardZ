@@ -48,11 +48,11 @@ class _FormScreenState extends ConsumerState<FormScreen>
     // Listen for state changes
     ref.listen(formControllerProvider(widget.formId), (prev, next) {
       if (!prev!.isSubmitSuccess && next.isSubmitSuccess) {
-        showSuccessDialog(context, ref, formType: "Form");
+        showSuccessDialog(context, ref, formType: context.l10n!.form);
       }
 
       if (next.error != null && prev.error != next.error) {
-        context.showSnackBar("An error occurred: ${next.error}");
+        context.showSnackBar("Error: ${next.error}");
       }
     });
 

@@ -42,7 +42,7 @@ class _FormsScreenState extends ConsumerState<FormsScreen> {
           ),
           const SizedBox(width: 8),
           Text(
-            "Forms",
+            context.l10n!.forms,
             style: context.textTheme.titleMedium!.copyWith(
               fontWeight: FontWeight.w500,
               color: Colors.white,

@@ -47,11 +47,11 @@ class _TaskScreenState extends ConsumerState<TaskScreen>
     // Listen for state changes
     ref.listen(taskControllerProvider(widget.taskId), (prev, next) {
       if (!prev!.isSubmitSuccess && next.isSubmitSuccess) {
-        showSuccessDialog(context, ref, formType: "Task");
+        showSuccessDialog(context, ref, formType: context.l10n!.task);
       }
 
       if (next.error != null && prev.error != next.error) {
-        context.showSnackBar("An error occurred: ${next.error}");
+        context.showSnackBar("Error: ${next.error}");
       }
     });
 

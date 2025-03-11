@@ -43,7 +43,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
           ),
           const SizedBox(width: 8),
           Text(
-            "Tasks",
+            context.l10n!.tasks,
             style: context.textTheme.titleMedium!.copyWith(
               fontWeight: FontWeight.w500,
               color: Colors.white,
