@@ -1,10 +1,9 @@
-
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:ugz_app/src/features/auth/providers/user_data_provider.dart';
 import 'package:ugz_app/src/local/record/pending_forms_model.dart';
-import 'package:ugz_app/src/local/usecases/get_pending_forms/get_pending_forms.dart';
-import 'package:ugz_app/src/local/usecases/get_pending_forms/get_pending_forms_params.dart';
+import 'package:ugz_app/src/local/usecases/stream_pending_forms/stream_pending_forms.dart';
+import 'package:ugz_app/src/local/usecases/stream_pending_forms/stream_pending_forms_params.dart';
 import 'package:ugz_app/src/utils/extensions/custom_extensions.dart';
 
 part 'history_pending_providers.g.dart';
@@ -15,16 +14,16 @@ class HistoryPending extends _$HistoryPending {
   FutureOr<Stream<List<PendingFormsModel>>> build() => getHistories();
 
   Stream<List<PendingFormsModel>> getHistories() async* {
-    final getPendingForms = ref.read(dbGetPendingFormsProvider);
+    final streamPendingForms = ref.read(dbStreamPendingFormsProvider);
 
-    final userId = ref.watch(userDataProvider).valueOrNull;
+    final user = ref.watch(userDataProvider).valueOrNull;
 
-    if (userId == null) {
+    if (user == null) {
       yield [];
       return;
     }
-    final result = await getPendingForms(
-      GetPendingFormsParams(userId: userId.id.toInt),
+    final result = await streamPendingForms(
+      StreamPendingFormsParams(userId: user.id.toInt),
     );
 
     yield* result;

@@ -4,7 +4,6 @@ import 'package:ugz_app/src/features/auth/domain/model/user.dart';
 import 'package:ugz_app/src/features/auth/domain/usecase/get_user/get_user_usecase.dart';
 import 'package:ugz_app/src/features/auth/domain/usecase/login/login_params.dart';
 import 'package:ugz_app/src/features/auth/domain/usecase/login/login_usecase.dart';
-import 'package:ugz_app/src/features/home/presentation/home/controller/home_controller.dart';
 import 'package:ugz_app/src/global_providers/global_providers.dart';
 import 'package:ugz_app/src/utils/misc/result.dart';
 
@@ -51,11 +50,7 @@ class UserData extends _$UserData {
     try {
       state = const AsyncData(null);
 
-      // Hapus kredensial/token
       ref.read(credentialsProvider.notifier).update(null);
-
-      // Kembalikan halaman ke awal
-      ref.read(pageProvider.notifier).state = 0;
     } catch (e) {
       state = AsyncError(e, StackTrace.current);
       state = const AsyncData(null);

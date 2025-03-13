@@ -2,9 +2,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:badges/badges.dart' as badges;
 import 'package:ugz_app/src/constants/gen/assets.gen.dart';
 import 'package:ugz_app/src/features/auth/providers/user_data_provider.dart';
 import 'package:ugz_app/src/global_providers/geolocation_tracking_service_providers.dart';
+import 'package:ugz_app/src/global_providers/pending_count_providers.dart';
+import 'package:ugz_app/src/local/usecases/delete_all_pending_forms/delete_all_pending_forms.dart';
 import 'package:ugz_app/src/routes/router_config.dart';
 import 'package:ugz_app/src/utils/extensions/custom_extensions.dart';
 import 'package:ugz_app/src/widgets/custom_view.dart';
@@ -32,7 +35,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // check for update latest apps
+    final pendingCount = ref.watch(pendingCountProvider);
 
     ref.listen(userDataProvider, (previous, next) {
       if (previous != null && next is AsyncData && next.value == null) {
@@ -74,37 +77,37 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
               Assets.images.loginLogo.image(width: 120),
               Row(
                 children: [
-                  // pendingCount.when(
-                  //   data: (data) {
-                  //     if (data != null && data > 0) {
-                  //       return badges.Badge(
-                  //         badgeContent: Text(
-                  //           data.toString(),
-                  //           textAlign: TextAlign.center,
-                  //           style: context.textTheme.labelSmall!,
-                  //         ),
-                  //         badgeStyle: badges.BadgeStyle(
-                  //           padding: const EdgeInsets.all(4),
-                  //           badgeColor: context.colorScheme.secondaryFixedDim,
-                  //           elevation: 0,
-                  //         ),
-                  //         position: badges.BadgePosition.topEnd(top: 2, end: 2),
-                  //         child: IconButton(
-                  //           onPressed: () {},
-                  //           icon: const FaIcon(
-                  //             FontAwesomeIcons.cloudArrowUp,
-                  //             size: 20,
-                  //             color: Colors.white,
-                  //           ),
-                  //         ),
-                  //       );
-                  //     }
+                  pendingCount.when(
+                    data: (data) {
+                      if (data != null && data > 0) {
+                        return badges.Badge(
+                          badgeContent: Text(
+                            data.toString(),
+                            textAlign: TextAlign.center,
+                            style: context.textTheme.labelSmall!,
+                          ),
+                          badgeStyle: badges.BadgeStyle(
+                            padding: const EdgeInsets.all(4),
+                            badgeColor: context.colorScheme.secondaryFixedDim,
+                            elevation: 0,
+                          ),
+                          position: badges.BadgePosition.topEnd(top: 2, end: 2),
+                          child: IconButton(
+                            onPressed: () {},
+                            icon: const FaIcon(
+                              FontAwesomeIcons.cloudArrowUp,
+                              size: 20,
+                              color: Colors.white,
+                            ),
+                          ),
+                        );
+                      }
 
-                  //     return const SizedBox();
-                  //   },
-                  //   error: (err, _) => const SizedBox(),
-                  //   loading: () => const SizedBox(),
-                  // ),
+                      return const SizedBox();
+                    },
+                    error: (err, _) => const SizedBox(),
+                    loading: () => const SizedBox(),
+                  ),
                   IconButton(
                     onPressed: () {
                       SettingsRoute().push(context);
@@ -118,7 +121,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
                   if (kDebugMode)
                     IconButton(
                       onPressed: () {
-                        // ref.read(dbDeleteAllPendingFormsProvider).call(null);
+                        ref.read(dbDeleteAllPendingFormsProvider).call(null);
                       },
                       icon: const FaIcon(
                         FontAwesomeIcons.trashArrowUp,
@@ -131,7 +134,6 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
             ],
           ),
           body: widget.child,
-
           backgroundColor: context.colorScheme.surfaceContainer,
           floatingActionButton: FloatingActionButton(
             shape: const CircleBorder(),

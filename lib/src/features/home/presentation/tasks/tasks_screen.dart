@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:ugz_app/src/constants/gen/assets.gen.dart';
-import 'package:ugz_app/src/features/home/presentation/home/controller/home_controller.dart';
 import 'package:ugz_app/src/features/home/presentation/tasks/controller/tasks_controller.dart';
 import 'package:ugz_app/src/routes/router_config.dart';
 import 'package:ugz_app/src/utils/extensions/custom_extensions.dart';

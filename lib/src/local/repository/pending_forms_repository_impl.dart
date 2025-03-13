@@ -28,10 +28,10 @@ class PendingFormsRepositoryImpl implements PendingFormsRepository {
   }
 
   @override
-  Stream<List<PendingFormsModel>> getUsersHistories({
+  Stream<List<PendingFormsModel>> streamUsersHistories({
     required String partitionKey,
   }) {
-    final entities = db.pendingFormsDao.getPendingFormsByPartition(
+    final entities = db.pendingFormsDao.streamPendingFormsByPartition(
       partitionKey: partitionKey,
     );
     return entities.map(
@@ -104,6 +104,16 @@ class PendingFormsRepositoryImpl implements PendingFormsRepository {
   @override
   Stream<int> count({required String partitionKey}) {
     return db.pendingFormsDao.count(partitionKey);
+  }
+
+  @override
+  Future<List<PendingFormsModel>> getUsersHistories({
+    required String partitionKey,
+  }) async {
+    final entities = await db.pendingFormsDao.getPendingFormsByPartition(
+      partitionKey: partitionKey,
+    );
+    return entities.map(PendingFormsMapper.mapToModel).toList();
   }
 }
 

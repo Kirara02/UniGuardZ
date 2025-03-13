@@ -1,5 +1,5 @@
-class GetPendingFormsParams {
+class StreamPendingFormsParams {
   final int userId;
 
-  GetPendingFormsParams({required this.userId});
+  StreamPendingFormsParams({required this.userId});
 }

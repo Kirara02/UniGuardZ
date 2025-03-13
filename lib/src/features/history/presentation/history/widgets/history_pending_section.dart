@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:ugz_app/src/constants/gen/assets.gen.dart';
 import 'package:ugz_app/src/features/history/providers/history_pending_providers.dart';
+import 'package:ugz_app/src/features/history/providers/retry_upload_providers.dart';
 import 'package:ugz_app/src/local/record/pending_forms_model.dart';
+import 'package:ugz_app/src/utils/misc/print.dart';
 import 'package:ugz_app/src/widgets/emoticons.dart';
 import 'package:ugz_app/src/widgets/list_item.dart';
 import 'package:ugz_app/src/utils/extensions/custom_extensions.dart';
@@ -15,6 +17,7 @@ class HistoryPendingSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Access AsyncValue<Stream<List<PendingFormsModel>>>
     final asyncController = ref.watch(historyPendingProvider);
+    final uploadingState = ref.watch(retryUploadStateNotifierProvider);
 
     return Stack(
       children: [
@@ -52,6 +55,7 @@ class HistoryPendingSection extends ConsumerWidget {
                           (context, index) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         final form = pendingForms[index];
+                        printIfDebug(form.toJson());
 
                         final iconPath =
                             form.category == 1
@@ -60,18 +64,31 @@ class HistoryPendingSection extends ConsumerWidget {
                                 ? Assets.icons.checklist.path
                                 : Assets.icons.guard.path;
 
+                        final isUploading =
+                            uploadingState.isUploading &&
+                            uploadingState.currentItemId == form.id;
+
                         return ListItem(
                           title: form.description,
                           subtitle: DateFormat(
                             'dd MMM yyyy, hh:mm a',
                           ).format(form.timestamp.toLocal()),
                           prefixIconPath: iconPath,
-                          suffix: const SizedBox(),
+                          suffix:
+                              isUploading
+                                  ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                  : IconButton(
+                                    icon: const Icon(Icons.upload),
+                                    onPressed:
+                                        () => _retryUpload(context, ref, form),
+                                  ),
                           onPressed: () {},
-                          // onPressed:
-                          //     () => ref
-                          //         .read(routerProvider)
-                          //         .push(Routes.MAPS, extra: form.toJson()),
                         );
                       },
                     ),
@@ -88,18 +105,63 @@ class HistoryPendingSection extends ConsumerWidget {
           left: 0,
           right: 0,
           child: ElevatedButton(
-            // onPressed:
-            //     () => ref.refresh(historyPendingProvider.future),
-            onPressed: () {},
-            child: Text(
-              context.l10n!.retry_upload,
-              style: context.textTheme.labelMedium!.copyWith(
-                color: Colors.white,
-              ),
+            onPressed:
+                uploadingState.isUploading
+                    ? null
+                    : () => _retryUploadAll(context, ref),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (uploadingState.isUploading)
+                  const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  ),
+                if (uploadingState.isUploading) const SizedBox(width: 8),
+                Text(
+                  context.l10n!.retry_upload,
+                  style: context.textTheme.labelMedium!.copyWith(
+                    color: Colors.white,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
       ],
     );
+  }
+
+  void _retryUpload(
+    BuildContext context,
+    WidgetRef ref,
+    PendingFormsModel form,
+  ) async {
+    final result = await ref
+        .read(retryUploadProvider.notifier)
+        .retryUploadSingle(form);
+
+    if (result.isSuccess && context.mounted) {
+      context.showSnackBar("Successfully uploaded ${form.description}");
+    } else if (context.mounted) {
+      context.showSnackBar("Failed to upload: ${result.errorMessage}");
+    }
+  }
+
+  void _retryUploadAll(BuildContext context, WidgetRef ref) async {
+    final result =
+        await ref.read(retryUploadProvider.notifier).retryUploadAll();
+
+    if (result.isSuccess && context.mounted) {
+      context.showSnackBar("Successfully uploaded all pending forms");
+    } else if (context.mounted) {
+      context.showSnackBar(
+        "Some forms failed to upload: ${result.errorMessage}",
+      );
+    }
   }
 }

@@ -109,7 +109,21 @@ class PendingFormsDao extends DatabaseAccessor<UniguardDB>
     )).get();
   }
 
-  Stream<List<PendingForms>> getPendingFormsByPartition({
+  Future<List<PendingForms>> getPendingFormsByPartition({
+    required String partitionKey,
+  }) {
+    return (select(db.pendingForms)
+          ..where((tbl) => tbl.partitionKey.equals(partitionKey))
+          ..orderBy([
+            (tbl) => OrderingTerm(
+              expression: tbl.timestamp,
+              mode: OrderingMode.desc,
+            ),
+          ]))
+        .get();
+  }
+
+  Stream<List<PendingForms>> streamPendingFormsByPartition({
     required String partitionKey,
   }) {
     return (select(db.pendingForms)

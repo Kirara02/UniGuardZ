@@ -14,7 +14,10 @@ abstract interface class PendingFormsRepository {
 
   Future<int> deleteById(int id);
 
-  Stream<List<PendingFormsModel>> getUsersHistories({
+  Stream<List<PendingFormsModel>> streamUsersHistories({
+    required String partitionKey,
+  });
+  Future<List<PendingFormsModel>> getUsersHistories({
     required String partitionKey,
   });
 
