@@ -7,18 +7,18 @@ import 'package:ugz_app/src/utils/misc/usecase.dart';
 
 part 'get_pending_forms.g.dart';
 
-class GetPendingForms
+class StreamPendingForms
     implements UseCase<Stream<List<PendingFormsModel>>, GetPendingFormsParams> {
   final PendingFormsRepository _repository;
 
-  GetPendingForms({required PendingFormsRepository repository})
+  StreamPendingForms({required PendingFormsRepository repository})
     : _repository = repository;
 
   @override
   Future<Stream<List<PendingFormsModel>>> call(
     GetPendingFormsParams params,
   ) async {
-    final result = _repository.getUsersHistories(
+    final result = _repository.streamUsersHistories(
       partitionKey: "user:${params.userId}",
     );
 
@@ -27,6 +27,5 @@ class GetPendingForms
 }
 
 @riverpod
-GetPendingForms dbGetPendingForms(DbGetPendingFormsRef ref) =>
-    GetPendingForms(repository: ref.watch(pendingFormsRepositoryProvider));
-
+StreamPendingForms dbStreamPendingForms(DbStreamPendingFormsRef ref) =>
+    StreamPendingForms(repository: ref.watch(pendingFormsRepositoryProvider));
