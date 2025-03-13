@@ -19,6 +19,7 @@ class HomeScreen extends ConsumerWidget {
     final alarmRef = ref.read(alarmIdKeyProvider.notifier);
     final alarm = ref.watch(alarmIdKeyProvider);
     final alarmActRef = ref.read(alarmProvider.notifier);
+    final isAlarmProcessing = ValueNotifier<bool>(false);
 
     ref.listen(alarmProvider, (prev, next) {
       if (next is AsyncData) {
@@ -29,6 +30,7 @@ class HomeScreen extends ConsumerWidget {
           alarmRef.update(null);
           context.showSnackBar("Alarm stopped");
         }
+        isAlarmProcessing.value = false;
       }
     });
 
@@ -44,12 +46,12 @@ class HomeScreen extends ConsumerWidget {
         onPressed: () => FormsRoute().push(context),
       ),
       MenuItem(
-        iconPath: Assets.images.tasks.path,
+        iconPath: Assets.images.task.path,
         label: context.l10n!.tasks,
         onPressed: () => TasksRoute().push(context),
       ),
       MenuItem(
-        iconPath: Assets.images.onlineActivity.path,
+        iconPath: Assets.images.activitylog.path,
         label: context.l10n!.activity_log,
         onPressed: () => ActivitiesRoute().push(context),
       ),
@@ -102,11 +104,11 @@ class HomeScreen extends ConsumerWidget {
                               fontWeight: FontWeight.w500,
                               color: AppColors.hint,
                             ),
-                          )
+                          ),
                         ],
-                      )
+                      ),
                     ],
-                  )
+                  ),
                 ],
               ),
             ),
@@ -114,93 +116,110 @@ class HomeScreen extends ConsumerWidget {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 24),
-            child: GridView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 28,
-                mainAxisSpacing: 24,
-                childAspectRatio: 1.5,
-              ),
-              itemCount: menuItems.length,
-              itemBuilder: (context, index) {
-                final item = menuItems[index];
-
-                return GestureDetector(
-                  onTap: item.isAlarmTap == false ? item.onPressed : null,
-                  onLongPress:
-                      item.isAlarmTap == true
-                          ? () async {
-                            final position = await _getLocation(context, ref);
-                            if (position == null) return;
-                            final bool isAlarmActive = alarm.isNull;
-                            if (isAlarmActive) {
-                              await alarmActRef.startAlarm(
-                                params: StartAlarmParams(
-                                  latitude: position.latitude,
-                                  longitude: position.longitude,
-                                ),
-                              );
-                            } else {
-                              if (alarm != null) {
-                                await alarmActRef.stopAlarm(
-                                  params: StopAlarmParams(
-                                    id: alarm,
-                                    latitude: position.latitude,
-                                    longitude: position.longitude,
-                                  ),
+            child: Wrap(
+              spacing: 28,
+              runSpacing: 24,
+              alignment: WrapAlignment.center,
+              children:
+                  menuItems.map((item) {
+                    return GestureDetector(
+                      onTap: item.isAlarmTap == false ? item.onPressed : null,
+                      onLongPress:
+                          item.isAlarmTap == true
+                              ? () async {
+                                isAlarmProcessing.value = true;
+                                final position = await _getLocation(
+                                  context,
+                                  ref,
                                 );
-                              } else {
-                                if (context.mounted) {
-                                  context.showSnackBar(
-                                    "Alarm ID tidak ditemukan!",
+                                if (position == null) {
+                                  isAlarmProcessing.value = false;
+                                  return;
+                                }
+                                final bool isAlarmActive = alarm.isNull;
+                                if (isAlarmActive) {
+                                  await alarmActRef.startAlarm(
+                                    params: StartAlarmParams(
+                                      latitude: position.latitude,
+                                      longitude: position.longitude,
+                                    ),
                                   );
+                                } else {
+                                  if (alarm != null) {
+                                    await alarmActRef.stopAlarm(
+                                      params: StopAlarmParams(
+                                        id: alarm,
+                                        latitude: position.latitude,
+                                        longitude: position.longitude,
+                                      ),
+                                    );
+                                  } else {
+                                    if (context.mounted) {
+                                      context.showSnackBar(
+                                        "Alarm ID tidak ditemukan!",
+                                      );
+                                    }
+                                    isAlarmProcessing.value = false;
+                                  }
                                 }
                               }
-                            }
-                          }
-                          : null,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      color: colorScheme.surfaceBright,
-                      border:
-                          item.isAlarmTap == true && !alarm.isNull
-                              ? Border.all(color: Colors.yellow, width: 2)
                               : null,
-                      boxShadow: [
-                        BoxShadow(
-                          color: colorScheme.outline.withOpacity(0.5),
-                          spreadRadius: 1.5,
-                          blurRadius: 2,
-                          offset: const Offset(1, 1),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Image.asset(
-                          item.iconPath,
-                          width: 48,
-                          height: 48,
-                          fit: BoxFit.cover,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          item.label,
-                          style: context.textTheme.labelMedium!.copyWith(
-                            fontWeight: FontWeight.w500,
+                      child: Stack(
+                        children: [
+                          Image.asset(
+                            item.iconPath,
+                            fit: BoxFit.fitWidth,
+                            height: 150,
+                            width: 120,
                           ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+                          Positioned(
+                            left: 3,
+                            top: 6,
+                            child: Container(
+                              height: 130,
+                              width: 105,
+                              decoration: BoxDecoration(
+                                border:
+                                    item.isAlarmTap == true && !alarm.isNull
+                                        ? Border.all(
+                                          color: Colors.blue,
+                                          width: 2,
+                                        )
+                                        : null,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                          if (item.isAlarmTap == true)
+                            Positioned(
+                              left: 3,
+                              top: 6,
+                              child: ValueListenableBuilder<bool>(
+                                valueListenable: isAlarmProcessing,
+                                builder: (context, isProcessing, child) {
+                                  if (isProcessing) {
+                                    return Container(
+                                      height: 130,
+                                      width: 105,
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withOpacity(0.3),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Center(
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  return const SizedBox.shrink();
+                                },
+                              ),
+                            ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
             ),
           ),
         ],

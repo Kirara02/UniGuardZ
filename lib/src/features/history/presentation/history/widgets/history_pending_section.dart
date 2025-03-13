@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:ugz_app/src/constants/enum.dart';
 import 'package:ugz_app/src/constants/gen/assets.gen.dart';
 import 'package:ugz_app/src/features/history/providers/history_pending_providers.dart';
 import 'package:ugz_app/src/features/history/providers/retry_upload_providers.dart';
 import 'package:ugz_app/src/local/record/pending_forms_model.dart';
+import 'package:ugz_app/src/routes/router_config.dart';
 import 'package:ugz_app/src/utils/misc/print.dart';
 import 'package:ugz_app/src/widgets/emoticons.dart';
 import 'package:ugz_app/src/widgets/list_item.dart';
@@ -88,7 +90,11 @@ class HistoryPendingSection extends ConsumerWidget {
                                     onPressed:
                                         () => _retryUpload(context, ref, form),
                                   ),
-                          onPressed: () {},
+                          onPressed:
+                              () => HistoryDetailData(
+                                historyId: form.formId,
+                                historyType: HistoryType.pending.value,
+                              ).push(context),
                         );
                       },
                     ),

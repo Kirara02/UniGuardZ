@@ -28,6 +28,12 @@ class PendingFormsRepositoryImpl implements PendingFormsRepository {
   }
 
   @override
+  Future<PendingFormsModel?> getByFormId(String formId) async {
+    final entity = await db.pendingFormsDao.getPendingFormByFormId(formId);
+    return entity != null ? PendingFormsMapper.mapToModel(entity) : null;
+  }
+
+  @override
   Stream<List<PendingFormsModel>> streamUsersHistories({
     required String partitionKey,
   }) {

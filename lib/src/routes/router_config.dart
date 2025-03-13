@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:ugz_app/src/constants/enum.dart';
 import 'package:ugz_app/src/features/auth/presentation/forgot_password/forgot_password_screen.dart';
 import 'package:ugz_app/src/features/auth/presentation/login/login_screen.dart';
 import 'package:ugz_app/src/features/auth/presentation/splash/splash_screen.dart';
 import 'package:ugz_app/src/features/history/presentation/history/history_screen.dart';
+import 'package:ugz_app/src/features/history/presentation/history_detail/history_detail_screen.dart';
 import 'package:ugz_app/src/features/home/presentation/activities/activities_screen.dart';
 import 'package:ugz_app/src/features/home/presentation/activity/activity_screen.dart';
 import 'package:ugz_app/src/features/home/presentation/form/form_screen.dart';
@@ -29,9 +31,6 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>(
   debugLabel: 'root',
 );
 
-// final GlobalKey<NavigatorState> _quickOpenNavigatorKey =
-//     GlobalKey<NavigatorState>(debugLabel: 'Quick Open');
-
 final GlobalKey<NavigatorState> _shellNavigatorKey = GlobalKey<NavigatorState>(
   debugLabel: 'shell',
 );
@@ -53,9 +52,9 @@ abstract class Routes {
   static const activity = 'activity/:activityId';
 
   static const history = '/history';
+  static const historyDetail = 'history/:historyId/:historyType';
 
   static const scan = '/scan';
-  static const maps = '/maps';
 
   static const settings = '/settings';
   static const profile = 'profile';

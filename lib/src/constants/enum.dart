@@ -1,14 +1,9 @@
-enum AuthType {
-  none,
-  bearer,
-  basic;
-}
+enum AuthType { none, bearer, basic }
 
 enum PendingFormCategory {
   forms(1),
   tasks(2),
-  activity(3),
-  ;
+  activity(3);
 
   final int value;
 
@@ -20,10 +15,7 @@ enum PendingFormCategory {
   }
 }
 
-enum FormType {
-  FORMS,
-  TASKS;
-}
+enum FormType { FORMS, TASKS }
 
 enum FieldTypes {
   text(1),
@@ -41,5 +33,18 @@ enum FieldTypes {
 
   static FieldTypes fromValue(int value) {
     return FieldTypes.values.firstWhere((e) => e.value == value);
+  }
+}
+
+enum HistoryType {
+  pending("pending"),
+  uploaded("uploaded");
+
+  final String value;
+
+  const HistoryType(this.value);
+
+  static HistoryType fromValue(String value) {
+    return HistoryType.values.firstWhere((e) => e.value == value);
   }
 }

@@ -23,5 +23,7 @@ abstract interface class PendingFormsRepository {
 
   Future<PendingFormsModel?> getById(int id);
 
+  Future<PendingFormsModel?> getByFormId(String formId);
+
   Stream<int> count({required String partitionKey});
 }

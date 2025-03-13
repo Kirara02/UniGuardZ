@@ -15,7 +15,13 @@ class PendingFormsDao extends DatabaseAccessor<UniguardDB>
   final UniguardDB db;
   PendingFormsDao(this.db) : super(db);
 
-  Future<int> insertPendingForm({required PendingForms data}) {
+  Future<int> insertPendingForm({required PendingForms data}) async {
+    final form = await getPendingFormByFormId(data.formId);
+
+    if (form != null) {
+      await deletePendingFormById(form.id);
+    }
+
     return into(db.pendingForms).insert(
       PendingFormsCompanion(
         partitionKey: Value(data.partitionKey),
@@ -142,8 +148,14 @@ class PendingFormsDao extends DatabaseAccessor<UniguardDB>
       ..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
   }
 
+  Future<PendingForms?> getPendingFormByFormId(String formId) async {
+    print("hello from local db");
+    return await (select(db.pendingForms)
+      ..where((tbl) => tbl.formId.equals(formId))).getSingleOrNull();
+  }
+
   Future<List<PendingForms>> getAllPendingForms(String partitionKey) {
-    return (select(db.pendingForms)
+    return (select(db.pendingForms) 
       ..where((tbl) => tbl.partitionKey.equals(partitionKey))).get();
   }
 

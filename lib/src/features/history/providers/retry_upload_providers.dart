@@ -87,19 +87,14 @@ class RetryUpload extends _$RetryUpload {
         case PendingFormCategory.activity:
           success = await _uploadActivity(form);
           break;
-        default:
-          throw Exception("Unknown form category: ${form.category}");
       }
 
       if (success) {
-        print("success");
         // Delete from local DB if upload was successful
         await pendingFormsRepo.deleteById(form.id);
         ref.read(retryUploadStateNotifierProvider.notifier).setUploading(false);
         return UploadResult(isSuccess: true);
       } else {
-        print("failed");
-
         ref
             .read(retryUploadStateNotifierProvider.notifier)
             .setUploading(false, error: "Failed to upload to server");
@@ -159,8 +154,6 @@ class RetryUpload extends _$RetryUpload {
             case PendingFormCategory.activity:
               success = await _uploadActivity(form);
               break;
-            default:
-              throw Exception("Unknown form category: ${form.category}");
           }
 
           if (success) {

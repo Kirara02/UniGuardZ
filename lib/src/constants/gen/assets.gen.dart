@@ -105,6 +105,10 @@ class $AssetsIconsGen {
 class $AssetsImagesGen {
   const $AssetsImagesGen();
 
+  /// File path: assets/images/activitylog.png
+  AssetGenImage get activitylog =>
+      const AssetGenImage('assets/images/activitylog.png');
+
   /// File path: assets/images/add_image.png
   AssetGenImage get addImage =>
       const AssetGenImage('assets/images/add_image.png');
@@ -193,6 +197,9 @@ class $AssetsImagesGen {
   /// File path: assets/images/sun.png
   AssetGenImage get sun => const AssetGenImage('assets/images/sun.png');
 
+  /// File path: assets/images/task.png
+  AssetGenImage get task => const AssetGenImage('assets/images/task.png');
+
   /// File path: assets/images/tasks.png
   AssetGenImage get tasks => const AssetGenImage('assets/images/tasks.png');
 
@@ -202,6 +209,7 @@ class $AssetsImagesGen {
 
   /// List of all assets
   List<AssetGenImage> get values => [
+    activitylog,
     addImage,
     alarm,
     camera,
@@ -226,6 +234,7 @@ class $AssetsImagesGen {
     signature,
     submit,
     sun,
+    task,
     tasks,
     uniguardIcon,
   ];

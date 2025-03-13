@@ -5,7 +5,9 @@ part of '../router_config.dart';
     // Nested Routes
     TypedGoRoute<MainpageRoute>(path: Routes.mainpage),
     TypedGoRoute<HomeRoute>(path: Routes.home),
-    TypedGoRoute<HistoryRoute>(path: Routes.history),
+    TypedGoRoute<HistoryRoute>(path: Routes.history, routes: [
+      TypedGoRoute<HistoryDetailData>(path: Routes.historyDetail),
+    ]),
   ],
 )
 class ShellRoute extends ShellRouteData {
