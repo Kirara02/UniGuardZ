@@ -1,25 +1,64 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gap/gap.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:ugz_app/src/constants/colors.dart';
 import 'package:ugz_app/src/constants/gen/assets.gen.dart';
 import 'package:ugz_app/src/features/home/domain/usecase/start_alarm/start_alarm_params.dart';
 import 'package:ugz_app/src/features/home/domain/usecase/stop_alarm/stop_alarm_params.dart';
 import 'package:ugz_app/src/features/home/providers/alarm_provider.dart';
+import 'package:ugz_app/src/features/settings/widgets/app_theme_mode_tile/app_theme_mode_tile.dart';
 import 'package:ugz_app/src/global_providers/location_providers.dart';
 import 'package:ugz_app/src/routes/router_config.dart';
 import 'package:ugz_app/src/utils/extensions/custom_extensions.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  Timer? _blinkTimer;
+  bool _isVisible = true;
+  final isAlarmProcessing = ValueNotifier<bool>(false);
+
+  @override
+  void initState() {
+    super.initState();
+    _startBlinking();
+  }
+
+  @override
+  void dispose() {
+    _blinkTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startBlinking() {
+    _blinkTimer = Timer.periodic(const Duration(milliseconds: 1500), (timer) {
+      setState(() {
+        _isVisible = !_isVisible;
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final colorScheme = context.colorScheme;
     final alarmRef = ref.read(alarmIdKeyProvider.notifier);
     final alarm = ref.watch(alarmIdKeyProvider);
     final alarmActRef = ref.read(alarmProvider.notifier);
-    final isAlarmProcessing = ValueNotifier<bool>(false);
+
+    final appThemeMode = ref.watch(appThemeModeProvider);
+
+    final isDarkMode =
+        appThemeMode == ThemeMode.dark ||
+        (appThemeMode == ThemeMode.system &&
+            MediaQuery.of(context).platformBrightness == Brightness.dark);
 
     ref.listen(alarmProvider, (prev, next) {
       if (next is AsyncData) {
@@ -36,28 +75,31 @@ class HomeScreen extends ConsumerWidget {
 
     final List<MenuItem> menuItems = [
       MenuItem(
-        iconPath: Assets.images.alarm.path,
+        iconPath: Assets.images.alarmIcon.path,
+        iconDarkPath: Assets.images.alarmIconDark.path,
         label: context.l10n!.alarm,
         isAlarmTap: true,
       ),
       MenuItem(
-        iconPath: Assets.images.forms.path,
+        iconPath: Assets.images.formIcon.path,
+        iconDarkPath: Assets.images.formIconDark.path,
         label: context.l10n!.forms,
         onPressed: () => FormsRoute().push(context),
       ),
       MenuItem(
-        iconPath: Assets.images.task.path,
+        iconPath: Assets.images.taskIcon.path,
+        iconDarkPath: Assets.images.taskIconDark.path,
         label: context.l10n!.tasks,
         onPressed: () => TasksRoute().push(context),
       ),
       MenuItem(
-        iconPath: Assets.images.activitylog.path,
+        iconPath: Assets.images.logIcon.path,
+        iconDarkPath: Assets.images.logIconDark.path,
         label: context.l10n!.activity_log,
         onPressed: () => ActivitiesRoute().push(context),
       ),
     ];
 
-    // Display the selected section based on the page state
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -166,55 +208,67 @@ class HomeScreen extends ConsumerWidget {
                               : null,
                       child: Stack(
                         children: [
-                          Image.asset(
-                            item.iconPath,
-                            fit: BoxFit.fitWidth,
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 1500),
                             height: 150,
-                            width: 120,
-                          ),
-                          Positioned(
-                            left: 3,
-                            top: 6,
-                            child: Container(
-                              height: 130,
-                              width: 105,
-                              decoration: BoxDecoration(
-                                border:
-                                    item.isAlarmTap == true && !alarm.isNull
-                                        ? Border.all(
-                                          color: Colors.blue,
-                                          width: 2,
-                                        )
-                                        : null,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
+                            width: 130,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              color: context.colorScheme.surfaceBright,
+                              border:
+                                  item.isAlarmTap == true && !alarm.isNull
+                                      ? Border.all(
+                                        color:
+                                            _isVisible
+                                                ? Colors.red
+                                                : Colors.transparent,
+                                        width: 2,
+                                      )
+                                      : null,
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Image.asset(
+                                  isDarkMode
+                                      ? item.iconDarkPath
+                                      : item.iconPath,
+                                  fit: BoxFit.fitWidth,
+                                  height: 80,
+                                  width: 80,
+                                ),
+                                const Gap(12),
+                                Text(
+                                  item.label,
+                                  style: context.textTheme.labelLarge!.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                           if (item.isAlarmTap == true)
-                            Positioned(
-                              left: 3,
-                              top: 6,
-                              child: ValueListenableBuilder<bool>(
-                                valueListenable: isAlarmProcessing,
-                                builder: (context, isProcessing, child) {
-                                  if (isProcessing) {
-                                    return Container(
-                                      height: 130,
-                                      width: 105,
-                                      decoration: BoxDecoration(
-                                        color: Colors.black.withOpacity(0.3),
-                                        borderRadius: BorderRadius.circular(12),
+                            ValueListenableBuilder<bool>(
+                              valueListenable: isAlarmProcessing,
+                              builder: (context, isProcessing, child) {
+                                if (isProcessing) {
+                                  return Container(
+                                    height: 150,
+                                    width: 130,
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.3),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Center(
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
                                       ),
-                                      child: const Center(
-                                        child: CircularProgressIndicator(
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                  return const SizedBox.shrink();
-                                },
-                              ),
+                                    ),
+                                  );
+                                }
+                                return const SizedBox.shrink();
+                              },
                             ),
                         ],
                       ),
@@ -262,12 +316,14 @@ class HomeScreen extends ConsumerWidget {
 
 class MenuItem {
   final String iconPath;
+  final String iconDarkPath;
   final String label;
   final bool? isAlarmTap;
   final VoidCallback? onPressed;
 
   MenuItem({
     required this.iconPath,
+    required this.iconDarkPath,
     required this.label,
     this.isAlarmTap = false,
     this.onPressed,

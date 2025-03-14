@@ -116,8 +116,24 @@ class $AssetsImagesGen {
   /// File path: assets/images/alarm.png
   AssetGenImage get alarm => const AssetGenImage('assets/images/alarm.png');
 
+  /// File path: assets/images/alarm_icon.png
+  AssetGenImage get alarmIcon =>
+      const AssetGenImage('assets/images/alarm_icon.png');
+
+  /// File path: assets/images/alarm_icon_dark.png
+  AssetGenImage get alarmIconDark =>
+      const AssetGenImage('assets/images/alarm_icon_dark.png');
+
   /// File path: assets/images/camera.png
   AssetGenImage get camera => const AssetGenImage('assets/images/camera.png');
+
+  /// File path: assets/images/form_icon.png
+  AssetGenImage get formIcon =>
+      const AssetGenImage('assets/images/form_icon.png');
+
+  /// File path: assets/images/form_icon_dark.png
+  AssetGenImage get formIconDark =>
+      const AssetGenImage('assets/images/form_icon_dark.png');
 
   /// File path: assets/images/forms.png
   AssetGenImage get forms => const AssetGenImage('assets/images/forms.png');
@@ -151,6 +167,14 @@ class $AssetsImagesGen {
   /// File path: assets/images/location_red.png
   AssetGenImage get locationRed =>
       const AssetGenImage('assets/images/location_red.png');
+
+  /// File path: assets/images/log_icon.png
+  AssetGenImage get logIcon =>
+      const AssetGenImage('assets/images/log_icon.png');
+
+  /// File path: assets/images/log_icon_dark.png
+  AssetGenImage get logIconDark =>
+      const AssetGenImage('assets/images/log_icon_dark.png');
 
   /// File path: assets/images/login_logo.png
   AssetGenImage get loginLogo =>
@@ -197,8 +221,13 @@ class $AssetsImagesGen {
   /// File path: assets/images/sun.png
   AssetGenImage get sun => const AssetGenImage('assets/images/sun.png');
 
-  /// File path: assets/images/task.png
-  AssetGenImage get task => const AssetGenImage('assets/images/task.png');
+  /// File path: assets/images/task_icon.png
+  AssetGenImage get taskIcon =>
+      const AssetGenImage('assets/images/task_icon.png');
+
+  /// File path: assets/images/task_icon_dark.png
+  AssetGenImage get taskIconDark =>
+      const AssetGenImage('assets/images/task_icon_dark.png');
 
   /// File path: assets/images/tasks.png
   AssetGenImage get tasks => const AssetGenImage('assets/images/tasks.png');
@@ -212,7 +241,11 @@ class $AssetsImagesGen {
     activitylog,
     addImage,
     alarm,
+    alarmIcon,
+    alarmIconDark,
     camera,
+    formIcon,
+    formIconDark,
     forms,
     fullMoon,
     gallery,
@@ -222,6 +255,8 @@ class $AssetsImagesGen {
     homeActive,
     locationPin,
     locationRed,
+    logIcon,
+    logIconDark,
     loginLogo,
     moon,
     nfcFailed,
@@ -234,7 +269,8 @@ class $AssetsImagesGen {
     signature,
     submit,
     sun,
-    task,
+    taskIcon,
+    taskIconDark,
     tasks,
     uniguardIcon,
   ];
