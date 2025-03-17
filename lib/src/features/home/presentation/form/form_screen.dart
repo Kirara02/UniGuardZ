@@ -274,13 +274,15 @@ class _FormScreenState extends ConsumerState<FormScreen>
               .where(
                 (field) =>
                     field.fieldTypeId == FieldTypes.text.value.toString() ||
-                    field.fieldTypeId == FieldTypes.input.value.toString(),
+                    field.fieldTypeId == FieldTypes.input.value.toString() ||
+                    field.fieldTypeId == FieldTypes.number.value.toString(),
               )
               .map(
                 (field) => FormStringEntry(
                   id: field.id.toInt,
                   inputName: field.formFieldName,
                   value: formValues[field.id],
+                  typeId: field.fieldTypeId,
                 ),
               )
               .toList(),
@@ -295,6 +297,7 @@ class _FormScreenState extends ConsumerState<FormScreen>
                   id: field.id.toInt,
                   inputName: field.formFieldName,
                   value: formValues[field.id]?.toString(),
+                  typeId: field.fieldTypeId,
                 ),
               )
               .toList(),
@@ -309,6 +312,7 @@ class _FormScreenState extends ConsumerState<FormScreen>
                   id: field.id.toInt,
                   inputName: field.formFieldName,
                   value: formValues[field.id]?.toString(),
+                  typeId: field.fieldTypeId,
                 ),
               )
               .toList(),
@@ -323,6 +327,7 @@ class _FormScreenState extends ConsumerState<FormScreen>
                   id: field.id.toInt,
                   inputName: field.formFieldName,
                   value: formValues[field.id]?.toString(),
+                  typeId: field.fieldTypeId,
                 ),
               )
               .toList(),
@@ -339,6 +344,7 @@ class _FormScreenState extends ConsumerState<FormScreen>
               value: option?.id.toString(),
               pickListOptionName: option?.name,
               pos: int.parse(formValues[field.id] ?? "0"),
+              typeId: field.fieldTypeId,
             );
           }).toList(),
     );

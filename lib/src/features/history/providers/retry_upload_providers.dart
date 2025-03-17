@@ -287,7 +287,7 @@ class RetryUpload extends _$RetryUpload {
         fields.add(
           FormField(
             id: comment['id'].toString(),
-            fieldTypeId: "2", // Text
+            fieldTypeId: comment['typeId'], // Text / Input / Number
             fieldTypeName: "text",
             formFieldName: comment['inputName'] ?? "Comment",
             value: comment['value'] ?? "",
@@ -302,7 +302,7 @@ class RetryUpload extends _$RetryUpload {
         fields.add(
           FormField(
             id: switchItem['id'].toString(),
-            fieldTypeId: "3", // Checkbox
+            fieldTypeId: switchItem['typeId'], // Checkbox
             fieldTypeName: "checkbox",
             formFieldName: switchItem['inputName'] ?? "Switch",
             value:
@@ -320,7 +320,7 @@ class RetryUpload extends _$RetryUpload {
         fields.add(
           FormField(
             id: photo['id'].toString(),
-            fieldTypeId: "4",
+            fieldTypeId: photo['typeId'], // Photo
             fieldTypeName: "image",
             formFieldName: photo['inputName'] ?? "Photo",
             value: "file_${photo['id']}",
@@ -335,10 +335,10 @@ class RetryUpload extends _$RetryUpload {
         fields.add(
           FormField(
             id: signature['id'].toString(),
-            fieldTypeId: "5",
+            fieldTypeId: signature['typeId'], // Signature
             fieldTypeName: "signature",
-            formFieldName: "Signature ${signature['id']}",
-            value: "signature_${signature['id']}",
+            formFieldName: signature['inputName']!,
+            value: "file_${signature['id']}",
           ),
         );
       }
@@ -350,9 +350,9 @@ class RetryUpload extends _$RetryUpload {
         fields.add(
           FormField(
             id: select['id'].toString(),
-            fieldTypeId: "6",
+            fieldTypeId: select['typeId'], // Select
             fieldTypeName: "options",
-            formFieldName: select['inputName'] ?? "Select",
+            formFieldName: select['inputName']!,
             value: select['value'] ?? "",
           ),
         );
@@ -373,6 +373,7 @@ class RetryUpload extends _$RetryUpload {
             FormPhoto(
               id: photo['id'].toString(),
               filePath: photo['value'].toString(),
+              type: FileType.File,
             ),
           );
         }
@@ -387,6 +388,7 @@ class RetryUpload extends _$RetryUpload {
             FormPhoto(
               id: signature['id'].toString(),
               filePath: signature['value'].toString(),
+              type: FileType.Signature,
             ),
           );
         }
@@ -405,7 +407,7 @@ class RetryUpload extends _$RetryUpload {
         fields.add(
           TaskField(
             id: comment['id'].toString(),
-            fieldTypeId: "2", // Text
+            fieldTypeId: comment['typeId'], // Text
             fieldTypeName: "text",
             taskFieldName: comment['inputName'] ?? "Comment",
             value: comment['value'] ?? "",
@@ -420,7 +422,7 @@ class RetryUpload extends _$RetryUpload {
         fields.add(
           TaskField(
             id: switchItem['id'].toString(),
-            fieldTypeId: "3", // Checkbox
+            fieldTypeId: switchItem['typeId'], // Checkbox
             fieldTypeName: "checkbox",
             taskFieldName: switchItem['inputName'] ?? "Switch",
             value:
@@ -438,7 +440,7 @@ class RetryUpload extends _$RetryUpload {
         fields.add(
           TaskField(
             id: photo['id'].toString(),
-            fieldTypeId: "4",
+            fieldTypeId: photo['typeId'], // Photo
             fieldTypeName: "image",
             taskFieldName: photo['inputName'] ?? "Photo",
             value: "file_${photo['id']}",
@@ -453,10 +455,10 @@ class RetryUpload extends _$RetryUpload {
         fields.add(
           TaskField(
             id: signature['id'].toString(),
-            fieldTypeId: "5",
+            fieldTypeId: signature['typeId'], // Signature
             fieldTypeName: "signature",
             taskFieldName: "Signature ${signature['id']}",
-            value: "signature_${signature['id']}",
+            value: "file_${signature['id']}",
           ),
         );
       }
@@ -468,7 +470,7 @@ class RetryUpload extends _$RetryUpload {
         fields.add(
           TaskField(
             id: select['id'].toString(),
-            fieldTypeId: "6",
+            fieldTypeId: select['typeId'], // Select
             fieldTypeName: "options",
             taskFieldName: select['inputName'] ?? "Select",
             value: select['value'] ?? "",

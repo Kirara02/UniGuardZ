@@ -17,6 +17,8 @@ enum PendingFormCategory {
 
 enum FormType { FORMS, TASKS }
 
+enum FileType { File, Signature }
+
 enum FieldTypes {
   text(1),
   input(2),

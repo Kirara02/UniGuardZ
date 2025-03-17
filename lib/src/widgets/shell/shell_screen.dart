@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:badges/badges.dart' as badges;
+import 'package:ugz_app/src/constants/colors.dart';
 import 'package:ugz_app/src/constants/gen/assets.gen.dart';
 import 'package:ugz_app/src/features/auth/providers/user_data_provider.dart';
 import 'package:ugz_app/src/global_providers/geolocation_tracking_service_providers.dart';
@@ -139,7 +140,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
             shape: const CircleBorder(),
             // onPressed: () => ref.read(routerProvider).push(Routes.SCAN),
             onPressed: () {},
-            backgroundColor: context.colorScheme.primary,
+            backgroundColor: AppColors.primary,
             child: Assets.icons.scan.svg(),
           ),
           floatingActionButtonLocation:

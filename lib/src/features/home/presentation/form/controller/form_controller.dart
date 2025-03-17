@@ -1,4 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:ugz_app/src/constants/enum.dart';
 import 'package:ugz_app/src/features/home/domain/model/form_model.dart';
 import 'package:ugz_app/src/features/home/domain/usecase/get_form_by_id/get_form_by_id_usecase.dart';
 import 'package:ugz_app/src/features/home/domain/usecase/submit_form/submit_form_params.dart';
@@ -93,7 +94,7 @@ class FormController extends _$FormController {
       data.comments.map(
         (e) => FormField(
           id: e.id.toString(),
-          fieldTypeId: "2", // Text
+          fieldTypeId: e.typeId!, // Text
           fieldTypeName: "text",
           formFieldName: e.inputName!,
           value: e.value ?? "",
@@ -106,7 +107,7 @@ class FormController extends _$FormController {
       data.switches.map(
         (e) => FormField(
           id: e.id.toString(),
-          fieldTypeId: "3", // Checkbox
+          fieldTypeId: e.typeId!, // Checkbox
           fieldTypeName: "checkbox",
           formFieldName: e.inputName!,
           value: (e.value == "true" || e.value == "1") ? "1" : "0",
@@ -117,7 +118,11 @@ class FormController extends _$FormController {
     // Handle photos
     photos.addAll(
       data.photos.map(
-        (e) => FormPhoto(id: e.id.toString(), filePath: e.value ?? ""),
+        (e) => FormPhoto(
+          id: e.id.toString(),
+          filePath: e.value ?? "",
+          type: FileType.File,
+        ),
       ),
     );
 
@@ -126,7 +131,7 @@ class FormController extends _$FormController {
       data.photos.map(
         (e) => FormField(
           id: e.id.toString(),
-          fieldTypeId: "4",
+          fieldTypeId: e.typeId!,
           fieldTypeName: "image",
           formFieldName: e.inputName!,
           value: "file_${e.id}",
@@ -137,7 +142,11 @@ class FormController extends _$FormController {
     // Handle signatures (treated like photos)
     photos.addAll(
       data.signatures.map(
-        (e) => FormPhoto(id: e.id.toString(), filePath: e.value ?? ""),
+        (e) => FormPhoto(
+          id: e.id.toString(),
+          filePath: e.value ?? "",
+          type: FileType.Signature,
+        ),
       ),
     );
 
@@ -145,10 +154,10 @@ class FormController extends _$FormController {
       data.signatures.map(
         (e) => FormField(
           id: e.id.toString(),
-          fieldTypeId: "5",
+          fieldTypeId: e.typeId!,
           fieldTypeName: "signature",
-          formFieldName: "Signature ${e.id}",
-          value: "signature_${e.id}",
+          formFieldName: e.inputName!,
+          value: "file_${e.id}",
         ),
       ),
     );
@@ -158,7 +167,7 @@ class FormController extends _$FormController {
       data.selects.map(
         (e) => FormField(
           id: e.id.toString(),
-          fieldTypeId: "6",
+          fieldTypeId: e.typeId!,
           fieldTypeName: "options",
           formFieldName: e.inputName!,
           value: e.value ?? "",

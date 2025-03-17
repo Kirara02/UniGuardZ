@@ -58,11 +58,12 @@ class FormStringEntry {
   final int id;
   final String? inputName;
   final String? value;
+  final String? typeId;
 
-  FormStringEntry({required this.id, this.inputName, this.value});
+  FormStringEntry({required this.id, this.inputName, this.value, this.typeId});
 
   Map<String, dynamic> toJson() {
-    return {'id': id, 'inputName': inputName, 'value': value};
+    return {'id': id, 'inputName': inputName, 'value': value, 'typeId': typeId};
   }
 
   factory FormStringEntry.fromJson(Map<String, dynamic> json) {
@@ -70,6 +71,7 @@ class FormStringEntry {
       id: json['id'] as int,
       inputName: json['inputName'] as String?,
       value: json['value'] as String?,
+      typeId: json['typeId'] as String?,
     );
   }
 }
@@ -78,11 +80,12 @@ class FormFileEntry {
   final int id;
   final String? inputName;
   final String? value;
+  final String? typeId;
 
-  FormFileEntry({required this.id, this.inputName, this.value});
+  FormFileEntry({required this.id, this.inputName, this.value, this.typeId});
 
   Map<String, dynamic> toJson() {
-    return {'id': id, 'inputName': inputName, 'value': value};
+    return {'id': id, 'inputName': inputName, 'value': value, 'typeId': typeId};
   }
 
   factory FormFileEntry.fromJson(Map<String, dynamic> json) {
@@ -90,6 +93,7 @@ class FormFileEntry {
       id: json['id'] as int,
       inputName: json['inputName'] as String?,
       value: json['value'] as String?,
+      typeId: json['typeId'] as String?,
     );
   }
 }
@@ -102,6 +106,7 @@ class FormSelectEntry {
   final String? value;
   final String? pickListOptionName;
   final int pos;
+  final String? typeId;
 
   FormSelectEntry({
     required this.id,
@@ -111,6 +116,7 @@ class FormSelectEntry {
     this.value,
     this.pickListOptionName,
     required this.pos,
+    this.typeId
   });
 
   Map<String, dynamic> toJson() {
@@ -122,6 +128,7 @@ class FormSelectEntry {
       'value': value,
       'pickListOptionName': pickListOptionName,
       'pos': pos,
+      'typeId': typeId
     };
   }
 
@@ -134,6 +141,7 @@ class FormSelectEntry {
       value: json['value'] as String?,
       pickListOptionName: json['pickListOptionName'] as String?,
       pos: json['pos'] as int,
+      typeId: json['typeId'] as String?
     );
   }
 }

@@ -18,8 +18,8 @@ void showSuccessDialog(
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
-                ref.watch(routerConfigProvider).pop();
+                // Navigator.of(context).pop();
+                HomeRoute().go(context);
               },
               child: Text(context.l10n!.ok),
             ),

@@ -12,7 +12,7 @@ part 'form_model.g.dart';
 abstract class FormModel with _$FormModel {
   const factory FormModel({
     @JsonKey(name: "id") required String id,
-    @JsonKey(name: "parent_branch_id") required String parentBranchId,
+    @JsonKey(name: "parent_branch_id")  String? parentBranchId,
     @JsonKey(name: "role_id") String? roleId,
     @JsonKey(name: "checkpoint_id") String? checkpointId,
     @JsonKey(name: "form_name") required String formName,

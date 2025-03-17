@@ -241,13 +241,17 @@ class _TaskScreenState extends ConsumerState<TaskScreen>
       comments:
           task.fields
               .where(
-                (field) => field.fieldTypeId == "2" || field.fieldTypeId == "1",
+                (field) =>
+                    field.fieldTypeId == FieldTypes.text.value.toString() ||
+                    field.fieldTypeId == FieldTypes.input.value.toString() ||
+                    field.fieldTypeId == FieldTypes.number.value.toString(),
               )
               .map(
                 (field) => FormStringEntry(
                   id: int.tryParse(field.id) ?? 0,
                   inputName: field.taskFieldName,
                   value: formValues[field.id] ?? "",
+                  typeId: field.fieldTypeId,
                 ),
               )
               .toList(),
@@ -259,6 +263,7 @@ class _TaskScreenState extends ConsumerState<TaskScreen>
                   id: int.tryParse(field.id) ?? 0,
                   inputName: field.taskFieldName,
                   value: (formValues[field.id] ?? false).toString(),
+                  typeId: field.fieldTypeId,
                 ),
               )
               .toList(),
@@ -270,6 +275,7 @@ class _TaskScreenState extends ConsumerState<TaskScreen>
                   id: int.tryParse(field.id) ?? 0,
                   inputName: field.taskFieldName,
                   value: formValues[field.id]?.toString() ?? "",
+                  typeId: field.fieldTypeId,
                 ),
               )
               .toList(),
@@ -281,6 +287,7 @@ class _TaskScreenState extends ConsumerState<TaskScreen>
                   id: int.tryParse(field.id) ?? 0,
                   inputName: field.taskFieldName,
                   value: formValues[field.id]?.toString() ?? "",
+                  typeId: field.fieldTypeId,
                 ),
               )
               .toList(),
@@ -296,6 +303,7 @@ class _TaskScreenState extends ConsumerState<TaskScreen>
                   value: formValues[field.id]?.toString() ?? "",
                   pickListOptionName: "",
                   pos: 0,
+                  typeId: field.fieldTypeId,
                 ),
               )
               .toList(),

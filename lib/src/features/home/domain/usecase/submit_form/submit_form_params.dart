@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as path;
+import 'package:ugz_app/src/constants/enum.dart';
 
 class SubmitFormParams {
   final String id;
@@ -48,11 +49,24 @@ class SubmitFormParams {
           if (mimeType.startsWith('image/')) {
             final filename = path.basename(photo.filePath!);
 
-            files["file_${photo.id}"] = await MultipartFile.fromFile(
-              photo.filePath!,
-              filename: "image-${photo.id}${path.extension(filename)}",
-              contentType: MediaType.parse(mimeType),
-            );
+            switch (photo.type) {
+              case FileType.File:
+                files["file_${photo.id}"] = await MultipartFile.fromFile(
+                  photo.filePath!,
+                  filename: "image-${photo.id}${path.extension(filename)}",
+                  contentType: MediaType.parse(mimeType),
+                );
+                break;
+              case FileType.Signature:
+                files["file_${photo.id}"] = await MultipartFile.fromFile(
+                  photo.filePath!,
+                  filename: "signature-${photo.id}${path.extension(filename)}",
+                  contentType: MediaType.parse(mimeType),
+                );
+                break;
+              case null:
+                break;
+            }
           } else {
             print('Skipping non-image file: ${photo.filePath}');
           }
@@ -92,6 +106,7 @@ class FormField {
 class FormPhoto {
   final String id;
   final String? filePath;
+  final FileType? type;
 
-  FormPhoto({required this.id, required this.filePath});
+  FormPhoto({required this.id, required this.filePath, this.type});
 }

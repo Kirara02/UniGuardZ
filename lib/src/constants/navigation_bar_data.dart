@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:ugz_app/src/constants/colors.dart';
 import 'package:ugz_app/src/constants/gen/assets.gen.dart';
+import 'package:ugz_app/src/utils/extensions/custom_extensions.dart';
+import 'package:ugz_app/src/widgets/icon.dart';
 import '../routes/router_config.dart';
 
 class NavigationBarData {
@@ -19,32 +20,16 @@ class NavigationBarData {
 
   static final navList = [
     NavigationBarData(
-      icon: Assets.images.homeActive.image(
-        width: 24,
-        height: 24,
-        color: AppColors.primary,
-      ),
-      activeIcon: Assets.images.homeActive.image(
-        width: 24,
-        height: 24,
-        color: AppColors.primary,
-      ),
-      label: (context) => "Home",
+      icon: CustomIcon(iconPath: Assets.images.homeActive.path),
+      activeIcon: CustomIcon(iconPath: Assets.images.homeActive.path),
+      label: (context) => context.l10n!.home,
       go: const HomeRoute().go,
       activeOn: [const HomeRoute().location],
     ),
     NavigationBarData(
-      icon: Assets.images.historiesActive.image(
-        width: 24,
-        height: 24,
-        color: AppColors.primary,
-      ),
-      activeIcon: Assets.images.historiesActive.image(
-        width: 24,
-        height: 24,
-        color: AppColors.primary,
-      ),
-      label: (context) => "More",
+      icon: CustomIcon(iconPath: Assets.images.historiesActive.path),
+      activeIcon: CustomIcon(iconPath: Assets.images.historiesActive.path),
+      label: (context) => context.l10n!.history,
       go: const HistoryRoute().go,
       activeOn: [
         const HistoryRoute().location,

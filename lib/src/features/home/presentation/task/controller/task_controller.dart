@@ -93,7 +93,7 @@ class TaskController extends _$TaskController {
       data.comments.map(
         (e) => TaskField(
           id: e.id.toString(),
-          fieldTypeId: "2", // Text
+          fieldTypeId: e.typeId!, // Text
           fieldTypeName: "text",
           taskFieldName: e.inputName!,
           value: e.value ?? "",
@@ -106,7 +106,7 @@ class TaskController extends _$TaskController {
       data.switches.map(
         (e) => TaskField(
           id: e.id.toString(),
-          fieldTypeId: "3", // Checkbox
+          fieldTypeId: e.typeId!, // Checkbox
           fieldTypeName: "checkbox",
           taskFieldName: e.inputName!,
           value: (e.value == "true" || e.value == "1") ? "1" : "0",
@@ -126,7 +126,7 @@ class TaskController extends _$TaskController {
       data.photos.map(
         (e) => TaskField(
           id: e.id.toString(),
-          fieldTypeId: "4",
+          fieldTypeId: e.typeId!,
           fieldTypeName: "image",
           taskFieldName: e.inputName!,
           value: "file_${e.id}",
@@ -145,10 +145,10 @@ class TaskController extends _$TaskController {
       data.signatures.map(
         (e) => TaskField(
           id: e.id.toString(),
-          fieldTypeId: "5",
+          fieldTypeId: e.typeId!,
           fieldTypeName: "signature",
           taskFieldName: "Signature ${e.id}",
-          value: "signature_${e.id}",
+          value: "file_${e.id}",
         ),
       ),
     );
@@ -158,7 +158,7 @@ class TaskController extends _$TaskController {
       data.selects.map(
         (e) => TaskField(
           id: e.id.toString(),
-          fieldTypeId: "6",
+          fieldTypeId: e.typeId!,
           fieldTypeName: "options",
           taskFieldName: e.inputName!,
           value: e.value ?? "",
