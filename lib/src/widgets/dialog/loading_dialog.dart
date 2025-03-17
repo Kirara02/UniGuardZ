@@ -9,12 +9,9 @@ void showLoadingDialog(BuildContext context) {
     builder: (BuildContext context) {
       return Container(
         padding: const EdgeInsets.all(12),
-        color: Colors.black.withOpacity(0.4),
+        color: Colors.black.withValues(alpha: 0.4),
         child: Center(
-          child: SpinKitThreeInOut(
-            size: 24,
-            color: AppColors.primary,
-          ),
+          child: SpinKitThreeInOut(size: 24, color: AppColors.primary),
         ),
       );
     },

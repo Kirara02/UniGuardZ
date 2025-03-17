@@ -257,7 +257,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     height: 150,
                                     width: 130,
                                     decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.3),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.3,
+                                      ),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: const Center(

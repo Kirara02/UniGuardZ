@@ -34,7 +34,7 @@ class ListItem extends ConsumerWidget {
           color: context.colorScheme.surface,
           boxShadow: [
             BoxShadow(
-              color: context.colorScheme.outline.withOpacity(0.4),
+              color: context.colorScheme.outline.withValues(alpha: 0.4),
               spreadRadius: 0,
               blurRadius: 1,
               offset: const Offset(0, 2),
@@ -104,7 +104,7 @@ class ListItem extends ConsumerWidget {
           height: 20,
           fit: BoxFit.contain,
         );
-      }
+    }
   }
 }
 

@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ugz_app/src/constants/colors.dart';
 import 'package:ugz_app/src/features/settings/widgets/app_theme_mode_tile/app_theme_mode_tile.dart';
 
-class CustomIcon extends ConsumerWidget {
+class NavigationIcon extends ConsumerWidget {
   final String iconPath;
-  const CustomIcon({super.key, required this.iconPath});
+  const NavigationIcon({super.key, required this.iconPath});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
