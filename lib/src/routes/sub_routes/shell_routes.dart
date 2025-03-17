@@ -6,7 +6,7 @@ part of '../router_config.dart';
     TypedGoRoute<MainpageRoute>(path: Routes.mainpage),
     TypedGoRoute<HomeRoute>(path: Routes.home),
     TypedGoRoute<HistoryRoute>(path: Routes.history, routes: [
-      TypedGoRoute<HistoryDetailData>(path: Routes.historyDetail),
+      TypedGoRoute<HistoryDetailRoute>(path: Routes.historyDetail),
     ]),
   ],
 )

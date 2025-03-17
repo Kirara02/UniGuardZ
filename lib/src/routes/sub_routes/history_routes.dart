@@ -8,8 +8,8 @@ class HistoryRoute extends GoRouteData {
       const NoTransitionPage(child: HistoryScreen());
 }
 
-class HistoryDetailData extends GoRouteData {
-  const HistoryDetailData({required this.historyId, required this.historyType});
+class HistoryDetailRoute extends GoRouteData {
+  const HistoryDetailRoute({required this.historyId, required this.historyType});
 
   final String historyId;
   final String historyType;

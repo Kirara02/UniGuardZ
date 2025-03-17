@@ -91,7 +91,7 @@ class HistoryPendingSection extends ConsumerWidget {
                                         () => _retryUpload(context, ref, form),
                                   ),
                           onPressed:
-                              () => HistoryDetailData(
+                              () => HistoryDetailRoute(
                                 historyId: form.formId,
                                 historyType: HistoryType.pending.value,
                               ).push(context),
