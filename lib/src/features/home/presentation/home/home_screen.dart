@@ -157,11 +157,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 24),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
             child: Wrap(
-              spacing: 28,
-              runSpacing: 24,
-              alignment: WrapAlignment.center,
+              spacing: 20,
+              runSpacing: 20,
+              alignment: WrapAlignment.spaceBetween,
               children:
                   menuItems.map((item) {
                     return GestureDetector(
@@ -210,8 +210,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         children: [
                           AnimatedContainer(
                             duration: const Duration(milliseconds: 1500),
-                            height: 150,
-                            width: 130,
+                            height: context.height * .25,
+                            width: context.width * .40,
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(12),
@@ -254,8 +254,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               builder: (context, isProcessing, child) {
                                 if (isProcessing) {
                                   return Container(
-                                    height: 150,
-                                    width: 130,
+                                    height: context.height * .25,
+                                    width: context.width * .40,
                                     decoration: BoxDecoration(
                                       color: Colors.black.withValues(
                                         alpha: 0.3,
