@@ -30,8 +30,16 @@ class AlertLogRepositoryImpl implements AlertLogRepository {
     int? limit,
     int? page,
   }) async {
+    final queryParameters = <String, dynamic>{
+      if (page != null) 'page': page,
+      if (limit != null) 'limit': limit,
+      if (startDate != null) 'start_date': startDate,
+      if (endDate != null) 'end_date': endDate,
+    };
+
     return await _dioClient.getApiListResponse<LogAlertModel>(
       'mobile-api/admin/log-alert',
+      queryParameters: queryParameters,
       itemConverter: (json) {
         return LogAlertModel.fromJson(json);
       },

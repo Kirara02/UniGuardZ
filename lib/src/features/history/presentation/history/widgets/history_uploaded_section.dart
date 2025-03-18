@@ -8,11 +8,60 @@ import 'package:ugz_app/src/routes/router_config.dart';
 import 'package:ugz_app/src/utils/extensions/custom_extensions.dart';
 import 'package:ugz_app/src/widgets/list_item.dart';
 
-class HistoryUploadedSection extends ConsumerWidget {
+class HistoryUploadedSection extends ConsumerStatefulWidget {
   const HistoryUploadedSection({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HistoryUploadedSection> createState() =>
+      _HistoryUploadedSectionState();
+}
+
+class _HistoryUploadedSectionState
+    extends ConsumerState<HistoryUploadedSection> {
+  final ScrollController _scrollController = ScrollController();
+  bool _isLoadingMore = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      if (!_isLoadingMore) {
+        _loadMore();
+      }
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (!mounted) return;
+
+    setState(() {
+      _isLoadingMore = true;
+    });
+
+    try {
+      await ref.read(historyUploadedProvider.notifier).loadMore();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingMore = false;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final historyAsync = ref.watch(historyUploadedProvider);
 
     return RefreshIndicator(
@@ -27,17 +76,27 @@ class HistoryUploadedSection extends ConsumerWidget {
                 ),
               )
               : ListView.separated(
-                itemCount: value.length,
+                controller: _scrollController,
+                itemCount: value.length + (_isLoadingMore ? 1 : 0),
                 padding: const EdgeInsets.fromLTRB(0, 12, 0, 20),
                 physics: const AlwaysScrollableScrollPhysics(),
                 separatorBuilder:
                     (context, index) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
-                  final item = value[index];
+                  if (index == value.length) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  }
+
+                  final historyItem = value[index];
                   String iconPath;
 
                   // Determine icon based on type
-                  switch (item.payloadData['type'].toLowerCase()) {
+                  switch (historyItem.payloadData['type'].toLowerCase()) {
                     case 'form':
                       iconPath = Assets.icons.file.path;
                     case 'task':
@@ -49,15 +108,15 @@ class HistoryUploadedSection extends ConsumerWidget {
                   }
 
                   return ListItem(
-                    title: item.referenceName,
+                    title: historyItem.referenceName,
                     subtitle: DateFormat(
                       'dd MMM yyyy, hh:mm a',
-                    ).format(DateTime.parse(item.originalSubmittedTime)),
+                    ).format(DateTime.parse(historyItem.originalSubmittedTime)),
                     prefixIconPath: iconPath,
                     suffix: InkWell(
                       onTap:
                           () => HistoryDetailRoute(
-                            historyId: item.id,
+                            historyId: historyItem.id,
                             historyType: HistoryType.uploaded.value,
                           ).push(context),
                       child: Container(
@@ -73,7 +132,7 @@ class HistoryUploadedSection extends ConsumerWidget {
                     ),
                     onPressed:
                         () => HistoryDetailRoute(
-                          historyId: item.id,
+                          historyId: historyItem.id,
                           historyType: HistoryType.uploaded.value,
                         ).push(context),
                   );
