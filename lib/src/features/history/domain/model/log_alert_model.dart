@@ -13,7 +13,7 @@ abstract class LogAlertModel with _$LogAlertModel {
     @JsonKey(name: 'log_id') required String logId,
     @JsonKey(name: 'log_uuid') required String logUuid,
     @JsonKey(name: 'reference_name') required String referenceName,
-    @JsonKey(name: 'branch_id') required String branchId,
+    @JsonKey(name: 'branch_id')  String? branchId,
     @JsonKey(name: 'user_id') required String userId,
     @JsonKey(name: 'role_id') required String roleId,
     @JsonKey(name: 'original_submitted_time')

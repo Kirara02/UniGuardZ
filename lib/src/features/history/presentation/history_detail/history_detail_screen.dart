@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +14,7 @@ import 'package:ugz_app/src/features/history/domain/model/payload_data_task_mode
 import 'package:ugz_app/src/features/history/presentation/history_detail/controller/history_detail_controller.dart';
 import 'package:ugz_app/src/utils/extensions/custom_extensions.dart';
 import 'package:intl/intl.dart';
+import 'package:ugz_app/src/utils/misc/print.dart';
 
 class HistoryDetailScreen extends ConsumerStatefulWidget {
   final String historyId;
@@ -63,6 +65,7 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
 
   Future<void> _initializeLocation(Map<String, dynamic> data) async {
     if (widget.historyType == HistoryType.pending) {
+      printIfDebug(data);
       if (data['latitude'] != null && data['longitude'] != null) {
         final lat = data['latitude'] as double;
         final long = data['longitude'] as double;
@@ -199,22 +202,40 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             if (widget.historyType == HistoryType.pending) ...[
+                              // Text(
+                              //   "Form ID: ${state.data!['formId'] ?? '-'}",
+                              //   style: Theme.of(context).textTheme.titleMedium,
+                              // ),
+                              // const SizedBox(height: 8),
+                              // Text(
+                              //   "Description: ${state.data!['description'] ?? '-'}",
+                              // ),
+                              // const SizedBox(height: 8),
+                              // Text(
+                              //   "Category: ${state.data!['category'] ?? '-'}",
+                              // ),
+                              // const SizedBox(height: 8),
+                              // Text(
+                              //   "Submitted Time: ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(state.data!['timestamp']))}",
+                              // ),
+                              // const SizedBox(height: 16),
+                              // Text(
+                              //   "Form Fields:",
+                              //   style: Theme.of(context).textTheme.titleMedium,
+                              // ),
                               Text(
-                                "Form ID: ${state.data!['formId'] ?? '-'}",
+                                _getTitleByCategory(
+                                  state.data!['category'] ?? 1,
+                                  state.data!,
+                                ),
                                 style: Theme.of(context).textTheme.titleMedium,
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                "Description: ${state.data!['description'] ?? '-'}",
+                                "Submitted Time: ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(state.data!['timestamp']))}",
                               ),
                               const SizedBox(height: 8),
-                              Text(
-                                "Category: ${state.data!['category'] ?? '-'}",
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                "Timestamp: ${state.data!['timestamp'] ?? '-'}",
-                              ),
+                              _buildPendingFields(context, state.data!),
                             ] else ...[
                               _buildUploadedContent(context, state.data!),
                             ],
@@ -423,6 +444,85 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
 
       default:
         return const Text('Unknown type');
+    }
+  }
+
+  Widget _buildPendingFields(BuildContext context, Map<String, dynamic> data) {
+    final formData = data['data'] as Map<String, dynamic>;
+    final fields = [
+      ...((formData['comments'] as List<dynamic>?) ?? []),
+      ...((formData['switches'] as List<dynamic>?) ?? []),
+      ...((formData['photos'] as List<dynamic>?) ?? []),
+      ...((formData['signatures'] as List<dynamic>?) ?? []),
+      ...((formData['selects'] as List<dynamic>?) ?? []),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children:
+          fields.map((field) {
+            final fieldTypeId = field['typeId'] as String;
+            final isImageField = fieldTypeId == "4" || fieldTypeId == "5";
+            final isBooleanField = fieldTypeId == "3";
+            final isSelectField = fieldTypeId == "6";
+
+            String getDisplayValue() {
+              if (isBooleanField) {
+                return field['value'].toString().toLowerCase() == 'true'
+                    ? 'True'
+                    : 'False';
+              }
+              if (isSelectField) {
+                return '${field['pickListOptionName']} (${field['pickListName']})';
+              }
+              return field['value']?.toString() ?? '-';
+            }
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    field['inputName'] ?? '-',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  if (isImageField && field['value'] != null)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.file(
+                        File(field['value']),
+                        height: 200,
+                        fit: BoxFit.cover,
+                        errorBuilder:
+                            (context, error, stackTrace) => const SizedBox(
+                              height: 200,
+                              child: Center(
+                                child: Text('Failed to load image'),
+                              ),
+                            ),
+                      ),
+                    )
+                  else
+                    Text(getDisplayValue()),
+                ],
+              ),
+            );
+          }).toList(),
+    );
+  }
+
+  String _getTitleByCategory(int category, Map<String, dynamic> data) {
+    switch (category) {
+      case 1:
+        return "Form Name: ${data['description'] ?? '-'}";
+      case 2:
+        return "Task Name: ${data['description'] ?? '-'}";
+      case 3:
+        return "Activity Name: ${data['description'] ?? '-'}";
+      default:
+        return "Form Name: ${data['description'] ?? '-'}";
     }
   }
 }

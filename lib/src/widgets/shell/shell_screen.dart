@@ -30,7 +30,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
   void initState() {
     super.initState();
     WidgetsFlutterBinding.ensureInitialized().addPostFrameCallback((_) {
-      ref.read(geolocationServiceProvider.notifier).startTracking();
+      // ref.read(geolocationServiceProvider.notifier).startTracking();
     });
   }
 

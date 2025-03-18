@@ -42,8 +42,10 @@ class HistoryUploadedSection extends ConsumerWidget {
                       iconPath = Assets.icons.file.path;
                     case 'task':
                       iconPath = Assets.icons.checklist.path;
-                    default:
+                    case 'activity':
                       iconPath = Assets.icons.guard.path;
+                    default:
+                      iconPath = Assets.icons.pinLocation.path;
                   }
 
                   return ListItem(
