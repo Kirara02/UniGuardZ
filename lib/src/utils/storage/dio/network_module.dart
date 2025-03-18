@@ -55,20 +55,20 @@ class DioNetworkModule {
       ..options.connectTimeout = Endpoints.connectionTimeout
       ..options.receiveTimeout = Endpoints.receiveTimeout
       ..options.contentType = Headers.jsonContentType
-      ..options.headers = {'x-app-build': ref.read(packageInfoProvider).buildNumber}
       ..interceptors.add(DioCacheInterceptor(options: cacheOptions))
       ..interceptors.add(HttpRequestInterceptor(ref, dio))
-      ..interceptors.add(PrettyDioLogger(
-        requestHeader: true,
-        requestBody: true,
-        responseBody: true,
-        responseHeader: false,
-        error: true,
-        compact: true,
-        maxWidth: 100,
-        enabled: kDebugMode,
-      ));
-
+      ..interceptors.add(
+        PrettyDioLogger(
+          requestHeader: true,
+          requestBody: true,
+          responseBody: true,
+          responseHeader: false,
+          error: true,
+          compact: true,
+          maxWidth: 100,
+          enabled: kDebugMode,
+        ),
+      );
 
     // if (kDebugMode) {
     //   dio.interceptors.add(

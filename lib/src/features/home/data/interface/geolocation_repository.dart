@@ -7,5 +7,7 @@ abstract interface class GeolocationRepository {
     required String buildCode,
     required double latitude,
     required double longitude,
+    required String deviceName,
+    required String deviceId,
   });
 }

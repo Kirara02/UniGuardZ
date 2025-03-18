@@ -40,6 +40,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _emailController.dispose();
   }
 
+  
   @override
   Widget build(BuildContext context) {
     return CustomView(

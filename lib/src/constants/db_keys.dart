@@ -13,7 +13,8 @@ enum DBKeys {
   alarm(false),
   alarmId(null),
   buildCode(0),
-  ;
+  deviceId(null),
+  deviceName(null);
 
   const DBKeys(this.initial);
 

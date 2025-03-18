@@ -329,6 +329,15 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.11"
+  device_imei:
+    dependency: "direct main"
+    description:
+      path: "."
+      ref: main
+      resolved-ref: "337b38d6640c1ebd7a72b0c027740cd2a9719553"
+      url: "https://github.com/jasonhcgt/device_imei.git"
+    source: git
+    version: "0.0.4+1"
   device_info_plus:
     dependency: "direct main"
     description:
@@ -591,6 +600,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.4.1"
+  flutter_device_imei:
+    dependency: "direct main"
+    description:
+      name: flutter_device_imei
+      sha256: f66531d8256fc116046e283a191f6552dc8ab5d1a1a3d03e3fd5ea1cc4deef7f
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.3"
   flutter_gen_core:
     dependency: transitive
     description:

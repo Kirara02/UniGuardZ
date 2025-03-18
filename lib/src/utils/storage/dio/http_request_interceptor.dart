@@ -14,9 +14,19 @@ class HttpRequestInterceptor extends Interceptor {
   HttpRequestInterceptor(this.ref, this.dio);
 
   @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+  void onRequest(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
     final credentials = ref.read(credentialsProvider);
     final authType = ref.read(authTypeKeyProvider);
+    final appBuild = ref.read(packageInfoProvider).buildNumber;
+    final deviceName = ref.read(deviceNameProvider);
+    final deviceId = ref.read(deviceIdProvider);
+
+    options.headers['x-app-build'] = appBuild;
+    options.headers['x-device-name'] = deviceName;
+    options.headers['x-device-uid'] = deviceId;
 
     if (authType == AuthType.basic) {
       if (credentials.isNotBlank) {

@@ -8,6 +8,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:ugz_app/src/features/auth/providers/user_data_provider.dart';
 import 'package:ugz_app/src/features/home/domain/usecase/submit_location/submit_location_params.dart';
@@ -29,6 +30,8 @@ void onStart(ServiceInstance service) async {
   int gpsInterval = 30;
   String? token;
   String? buildCode;
+  String? deviceName;
+  String? deviceId;
 
   // **Langsung mulai tracking jika data user telah dikirim sebelumnya**
   service.on('setUserData').listen((event) {
@@ -37,19 +40,25 @@ void onStart(ServiceInstance service) async {
     gpsInterval = event?['gpsInterval'] ?? 30;
     token = event?['token'];
     buildCode = event?['buildCode'];
+    deviceName = event?['deviceName'];
+    deviceId = event?['deviceId'];
 
     debugPrint("User ditemukan: $userId, GPS Tracking: $gpsTrackingEnabled");
 
     if (userId != null &&
         gpsTrackingEnabled &&
         token != null &&
-        buildCode != null) {
+        buildCode != null &&
+        deviceName != null &&
+        deviceId != null) {
       startTracking(
         service,
         flutterLocalNotificationsPlugin,
         gpsInterval,
         token!,
         buildCode!,
+        deviceName!,
+        deviceId!,
       );
     } else {
       debugPrint("User tidak ditemukan atau tracking tidak aktif.");
@@ -67,6 +76,8 @@ void startTracking(
   int interval,
   String token,
   String buildCode,
+  String deviceName,
+  String deviceId,
 ) {
   StreamSubscription<Position>? positionStream;
 
@@ -116,6 +127,8 @@ void startTracking(
         buildCode: buildCode,
         latitude: position.latitude,
         longitude: position.longitude,
+        deviceName: deviceName,
+        deviceId: deviceId,
       ),
     );
     printIfDebug(result);
@@ -215,10 +228,13 @@ class GeolocationTrackingService {
   }
 
   Future<void> startService(Ref ref) async {
+    final packageInfo = await PackageInfo.fromPlatform();
     bool isRunning = await _service.isRunning();
     final user = ref.read(userDataProvider).valueOrNull;
     final credentials = ref.read(credentialsProvider);
-    final buildCode = ref.read(packageInfoProvider).buildNumber;
+    final buildCode = packageInfo.buildNumber;
+    final deviceName = ref.read(deviceNameProvider);
+    final deviceId = ref.read(deviceIdProvider);
 
     printIfDebug(user);
     printIfDebug(isRunning);
@@ -234,7 +250,7 @@ class GeolocationTrackingService {
 
       await _service.startService();
 
-      Future.delayed(const Duration(seconds: 2), () {
+      Future.delayed(const Duration(seconds: 5), () {
         debugPrint("HERE");
         _service.invoke('setUserData', {
           'userId': user.id,
@@ -242,6 +258,8 @@ class GeolocationTrackingService {
           'gpsInterval': user.parentBranch.gpsInterval,
           'token': credentials,
           'buildCode': buildCode,
+          'deviceName': deviceName,
+          'deviceId': deviceId,
         });
       });
     }

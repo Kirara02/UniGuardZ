@@ -17,13 +17,20 @@ class GeolocationRepositoryImpl implements GeolocationRepository {
   Future<ApiResponse<GeolocationModel>> uploadLocation({
     required String token,
     required String buildCode,
+    required String deviceName,
+    required String deviceId,
     required double latitude,
     required double longitude,
   }) async {
     return await _dioClient.postApiResponse<GeolocationModel>(
       "mobile-api/admin/geolocation/log/interval",
       options: Options(
-        headers: {"Authorization": "Bearer $token", "x-app-build": buildCode},
+        headers: {
+          "Authorization": "Bearer $token",
+          "x-app-build": buildCode,
+          'x-device-name': deviceName,
+          'x-device-uid': deviceId,
+        },
       ),
       data: {
         "latitude": latitude,

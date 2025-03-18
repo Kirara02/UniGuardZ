@@ -36,9 +36,11 @@ class UserData extends _$UserData {
 
     var result = await login(LoginParams(email: email, password: password));
 
+    
     switch (result) {
       case Success(value: final data):
         ref.read(credentialsProvider.notifier).update(data.accessToken);
+      
         state = AsyncData(data.user);
       case Failed(:final message):
         state = AsyncError(FlutterError(message), StackTrace.current);

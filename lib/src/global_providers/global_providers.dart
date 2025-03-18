@@ -61,6 +61,22 @@ class Credentials extends _$Credentials
 }
 
 @riverpod
+class DeviceName extends _$DeviceName
+    with SharedPreferenceClientMixin<String> {
+  @override
+  String? build() => initialize(DBKeys.deviceName);
+
+}
+
+@riverpod
+class DeviceId extends _$DeviceId
+    with SharedPreferenceClientMixin<String> {
+  @override
+  String? build() => initialize(DBKeys.deviceId);
+
+}
+
+@riverpod
 class L10n extends _$L10n with SharedPreferenceClientMixin<Locale> {
   Map<String, String> toJson(Locale locale) => {
     if (locale.countryCode.isNotBlank) "countryCode": locale.countryCode!,

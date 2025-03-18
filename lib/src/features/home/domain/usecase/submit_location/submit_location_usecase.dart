@@ -20,6 +20,8 @@ class SubmitLocation implements UseCase<String, SubmitLocationParams> {
       longitude: params.longitude,
       token: params.token,
       buildCode: params.buildCode,
+      deviceName: params.deviceName,
+      deviceId: params.deviceId
     );
 
     return response.message;
