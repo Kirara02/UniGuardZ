@@ -101,11 +101,34 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   // Function to request permissions
   Future<void> _requestPermissions() async {
-    await _checkBluetoothPermission();
-    await _checkBatteryOptimization();
+    if (Platform.isAndroid) {
+      await _checkBluetoothPermission();
+      await _checkBatteryOptimization();
+    }
     await _checkLocationPermissions();
     if (Platform.isAndroid && (await _getAndroidVersion() >= 30)) {
       _checkLocationAlwaysPermissions();
+    } else if (Platform.isIOS) {
+      _checkLocationAlwaysPermissions();
+    }
+  }
+
+  Future<void> _checkBluetoothPermission() async {
+    await _showLoadingDialog(context, "Checking Bluetooth Permission...");
+
+    // Check Bluetooth status
+    bool isBluetoothEnabled = await _isBluetoothEnabled();
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
+    _isLoadingDialogVisible = false;
+
+    if (!isBluetoothEnabled) {
+      await _showPermissionDialog(
+        message:
+            "Bluetooth permission: Bluetooth beacon scanning requires permission.",
+        onFix: _requestEnableBluetooth,
+      );
     }
   }
 
@@ -124,25 +147,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         message:
             "Battery optimizations: Battery optimization enabled. Location functions may be negatively impacted",
         onFix: _requestDisableBatteryOptimization,
-      );
-    }
-  }
-
-  Future<void> _checkBluetoothPermission() async {
-    await _showLoadingDialog(context, "Checking Bluetooth Permission...");
-
-    // Cek status Bluetooth
-    bool isBluetoothEnabled = await _isBluetoothEnabled();
-    if (mounted) {
-      Navigator.of(context).pop();
-    }
-    _isLoadingDialogVisible = false;
-
-    if (!isBluetoothEnabled) {
-      await _showPermissionDialog(
-        message:
-            "Bluetooth permission: Bluetooth beacon scanning requires permission.",
-        onFix: _requestEnableBluetooth,
       );
     }
   }
@@ -194,9 +198,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Future<bool> _isBluetoothEnabled() async {
-    final bluetoothStatus = await Permission.bluetooth.serviceStatus.isEnabled;
+    if (Platform.isIOS) {
+      // On iOS, we need to check both the permission and the service status
+      final bluetoothPermission = await Permission.bluetooth.status;
 
-    return bluetoothStatus; // Return true if Bluetooth is enabled
+      // Only proceed if all permissions are granted
+      if (bluetoothPermission.isGranted) {
+        return true;
+      }
+      return false;
+    }
+
+    // For Android, use the existing check
+    final bluetoothStatus = await Permission.bluetooth.serviceStatus.isEnabled;
+    print(bluetoothStatus);
+    return bluetoothStatus;
   }
 
   Future<bool> _isLocationPermissionGranted() async {
@@ -231,19 +247,45 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Future<void> _requestLocationPermissions() async {
-    await Permission.location.request();
-    print(await Permission.locationAlways.status);
+    // Check current status first
+    final status = await Permission.location.status;
 
-    if (await Permission.locationAlways.status.isPermanentlyDenied) {
+    if (status.isPermanentlyDenied) {
+      // If permanently denied, directly open settings
       openAppSettings();
+      return;
+    }
+
+    // If not permanently denied, request permission
+    final requestStatus = await Permission.location.request();
+
+    // If permission is denied after request, check if it's permanently denied
+    if (requestStatus.isDenied) {
+      if (requestStatus.isPermanentlyDenied) {
+        openAppSettings();
+      }
     }
   }
 
   Future<void> _requestLocationsAlwaysPermissions() async {
-    await Permission.locationAlways.request();
-    print(await Permission.locationAlways.status);
-    if (await Permission.locationAlways.status.isPermanentlyDenied) {
-      await Permission.locationAlways.request();
+    // Check current status first
+    final status = await Permission.locationAlways.status;
+
+    if (status.isPermanentlyDenied) {
+      // If permanently denied, directly open settings
+      openAppSettings();
+      return;
+    }
+
+    // If not permanently denied, request permission
+    final requestStatus = await Permission.locationAlways.request();
+    print("Location always permission request status: $requestStatus");
+
+    // If permission is denied after request, check if it's permanently denied
+    if (requestStatus.isDenied) {
+      if (requestStatus.isPermanentlyDenied) {
+        openAppSettings();
+      }
     }
   }
 

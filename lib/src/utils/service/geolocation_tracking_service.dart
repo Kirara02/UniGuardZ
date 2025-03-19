@@ -84,24 +84,27 @@ void startTracking(
   late LocationSettings locationSettings;
 
   if (defaultTargetPlatform == TargetPlatform.android) {
+    print("Android");
     locationSettings = AndroidSettings(
       accuracy: LocationAccuracy.high,
-      distanceFilter: 0,
+      distanceFilter: 1,
       intervalDuration: Duration(seconds: interval),
     );
   } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+    print("IOS");
     locationSettings = AppleSettings(
       accuracy: LocationAccuracy.high,
       activityType: ActivityType.otherNavigation,
-      distanceFilter: 0,
+      distanceFilter: 1,
       pauseLocationUpdatesAutomatically: true,
       showBackgroundLocationIndicator: false,
     );
   } else {
+    print("Other");
     locationSettings = const LocationSettings(
       accuracy: LocationAccuracy.high,
       timeLimit: Duration(minutes: 1),
-      distanceFilter: 0,
+      distanceFilter: 1,
     );
   }
 
@@ -170,6 +173,7 @@ Future<bool> onIosBackground(ServiceInstance service) async {
   return true;
 }
 
+@pragma('vm:entry-point')
 class GeolocationTrackingService {
   static final GeolocationTrackingService _instance =
       GeolocationTrackingService._internal();

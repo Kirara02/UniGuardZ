@@ -14,7 +14,7 @@ import flutter_background_service_ios
         GeneratedPluginRegistrant.register(with: registry)
     }
 
-    SwiftFlutterBackgroundServicePlugin.taskIdentifier = "com.uniguard.uniguard_z.background_service"
+    SwiftFlutterBackgroundServicePlugin.taskIdentifier = "com.uniguard.uniguardz"
     
     if let apiKey = Bundle.main.object(forInfoDictionaryKey: "GMSApiKey") as? String {
         GMSServices.provideAPIKey(apiKey)
