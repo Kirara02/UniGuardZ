@@ -30,11 +30,14 @@ class AlertLogRepositoryImpl implements AlertLogRepository {
     int? limit,
     int? page,
   }) async {
+    final now = DateTime.now();
+    final oneMonthAgo = now.subtract(const Duration(days: 30));
+
     final queryParameters = <String, dynamic>{
       if (page != null) 'page': page,
       if (limit != null) 'limit': limit,
-      if (startDate != null) 'start_date': startDate,
-      if (endDate != null) 'end_date': endDate,
+      'start_date': startDate ?? oneMonthAgo.toIso8601String().split('T')[0],
+      'end_date': endDate ?? now.toIso8601String().split('T')[0],
     };
 
     return await _dioClient.getApiListResponse<LogAlertModel>(

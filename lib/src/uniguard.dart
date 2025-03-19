@@ -92,8 +92,9 @@ class _UniguardState extends ConsumerState<Uniguard> {
           "${androidInfo.manufacturer.toCamelCase} ${androidInfo.name}";
     } else if (Platform.isIOS) {
       final iosInfo = await info.iosInfo;
+      print(iosInfo);
 
-      deviceName = iosInfo.name;
+      deviceName = iosInfo.modelName;
     }
 
     return deviceName;
@@ -103,7 +104,8 @@ class _UniguardState extends ConsumerState<Uniguard> {
     String platformVersion = "unknown";
     try {
       platformVersion =
-          await FlutterDeviceImei.instance.getIMEI() ?? 'Unknown platform version';
+          await FlutterDeviceImei.instance.getIMEI() ??
+          'Unknown platform version';
     } on PlatformException {
       printIfDebug("Failed to get platform version.");
     }

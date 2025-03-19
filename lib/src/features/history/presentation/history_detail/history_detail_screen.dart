@@ -185,11 +185,9 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
                       initialCameraPosition: _initialCameraPosition,
                       markers: _markers,
                       zoomControlsEnabled: false,
+                      style: _mapStyle,
                       onMapCreated: (GoogleMapController controller) async {
                         _controller.complete(controller);
-                        if (_mapStyle != null) {
-                          await controller.setMapStyle(_mapStyle);
-                        }
                       },
                     ),
                   ),
@@ -202,27 +200,6 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             if (widget.historyType == HistoryType.pending) ...[
-                              // Text(
-                              //   "Form ID: ${state.data!['formId'] ?? '-'}",
-                              //   style: Theme.of(context).textTheme.titleMedium,
-                              // ),
-                              // const SizedBox(height: 8),
-                              // Text(
-                              //   "Description: ${state.data!['description'] ?? '-'}",
-                              // ),
-                              // const SizedBox(height: 8),
-                              // Text(
-                              //   "Category: ${state.data!['category'] ?? '-'}",
-                              // ),
-                              // const SizedBox(height: 8),
-                              // Text(
-                              //   "Submitted Time: ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(state.data!['timestamp']))}",
-                              // ),
-                              // const SizedBox(height: 16),
-                              // Text(
-                              //   "Form Fields:",
-                              //   style: Theme.of(context).textTheme.titleMedium,
-                              // ),
                               Text(
                                 _getTitleByCategory(
                                   state.data!['category'] ?? 1,

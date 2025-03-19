@@ -17,7 +17,6 @@ class HistoryPendingSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Access AsyncValue<Stream<List<PendingFormsModel>>>
     final asyncController = ref.watch(historyPendingProvider);
     final uploadingState = ref.watch(retryUploadStateNotifierProvider);
 

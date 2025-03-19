@@ -247,7 +247,12 @@ class DioClient {
         return ApiResponse<List<T>>(
           success: false,
           message: errorMessage,
-          meta: MetaData(timestamp: DateTime.now().toIso8601String()),
+          meta:
+              response.data['meta'] != null
+                  ? MetaData.fromJson(
+                    response.data['meta'] as Map<String, dynamic>,
+                  )
+                  : MetaData(timestamp: DateTime.now().toIso8601String()),
           error: ErrorData(
             code: response.statusCode ?? 0,
             details: errorMessage,
