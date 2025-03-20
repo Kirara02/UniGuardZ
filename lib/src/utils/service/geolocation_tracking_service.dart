@@ -96,8 +96,8 @@ void startTracking(
       accuracy: LocationAccuracy.high,
       activityType: ActivityType.otherNavigation,
       distanceFilter: 1,
-      pauseLocationUpdatesAutomatically: true,
-      showBackgroundLocationIndicator: false,
+      pauseLocationUpdatesAutomatically: false,
+      showBackgroundLocationIndicator: true,
     );
   } else {
     print("Other");
@@ -170,10 +170,16 @@ void startTracking(
 Future<bool> onIosBackground(ServiceInstance service) async {
   WidgetsFlutterBinding.ensureInitialized();
   DartPluginRegistrant.ensureInitialized();
+  
+  // Request location permission if not already granted
+  final locationStatus = await Permission.locationAlways.status;
+  if (!locationStatus.isGranted) {
+    await Permission.locationAlways.request();
+  }
+  
   return true;
 }
 
-@pragma('vm:entry-point')
 class GeolocationTrackingService {
   static final GeolocationTrackingService _instance =
       GeolocationTrackingService._internal();
@@ -244,18 +250,13 @@ class GeolocationTrackingService {
     printIfDebug(isRunning);
 
     if (!isRunning) {
-      // <--- Seharusnya kalau sudah berjalan, tidak masuk sini
       if (user == null) {
         debugPrint("User belum login, service tidak bisa dimulai.");
         return;
-      } else {
-        debugPrint(user.email);
       }
 
-      await _service.startService();
-
-      Future.delayed(const Duration(seconds: 5), () {
-        debugPrint("HERE");
+      await _service.startService().then((_) {
+        debugPrint("Start Service");
         _service.invoke('setUserData', {
           'userId': user.id,
           'gpsTrackingEnabled': user.parentBranch.gpsTrackingEnabled,
@@ -266,6 +267,10 @@ class GeolocationTrackingService {
           'deviceId': deviceId,
         });
       });
+
+      // Future.delayed(const Duration(seconds: 2), () {
+      //
+      // });
     }
   }
 
@@ -281,11 +286,11 @@ class GeolocationTrackingService {
   }
 
   Future<void> requestNotificationPermission() async {
-    if (Platform.isAndroid) {
-      var status = await Permission.notification.status;
-      if (!status.isGranted) {
-        await Permission.notification.request();
-      }
+    // if (Platform.isAndroid) {
+    var status = await Permission.notification.status;
+    if (!status.isGranted) {
+      await Permission.notification.request();
     }
+    // }
   }
 }
