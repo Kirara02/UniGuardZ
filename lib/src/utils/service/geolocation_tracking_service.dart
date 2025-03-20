@@ -87,7 +87,7 @@ void startTracking(
     print("Android");
     locationSettings = AndroidSettings(
       accuracy: LocationAccuracy.high,
-      distanceFilter: 1,
+      distanceFilter: 2,
       intervalDuration: Duration(seconds: interval),
     );
   } else if (defaultTargetPlatform == TargetPlatform.iOS) {
@@ -95,7 +95,7 @@ void startTracking(
     locationSettings = AppleSettings(
       accuracy: LocationAccuracy.high,
       activityType: ActivityType.otherNavigation,
-      distanceFilter: 1,
+      distanceFilter: 2,
       pauseLocationUpdatesAutomatically: false,
       showBackgroundLocationIndicator: true,
     );
@@ -170,13 +170,13 @@ void startTracking(
 Future<bool> onIosBackground(ServiceInstance service) async {
   WidgetsFlutterBinding.ensureInitialized();
   DartPluginRegistrant.ensureInitialized();
-  
+
   // Request location permission if not already granted
   final locationStatus = await Permission.locationAlways.status;
   if (!locationStatus.isGranted) {
     await Permission.locationAlways.request();
   }
-  
+
   return true;
 }
 
