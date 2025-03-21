@@ -12,6 +12,7 @@ import 'package:ugz_app/src/features/home/presentation/activity/activity_screen.
 import 'package:ugz_app/src/features/home/presentation/form/form_screen.dart';
 import 'package:ugz_app/src/features/home/presentation/forms/forms_screen.dart';
 import 'package:ugz_app/src/features/home/presentation/home/home_screen.dart';
+import 'package:ugz_app/src/features/home/presentation/scan/scan_screen.dart';
 import 'package:ugz_app/src/features/home/presentation/task/task_screen.dart';
 import 'package:ugz_app/src/features/home/presentation/tasks/tasks_screen.dart';
 import 'package:ugz_app/src/features/settings/presentation/about/about_screen.dart';
@@ -26,6 +27,7 @@ part 'sub_routes/shell_routes.dart';
 part 'sub_routes/home_routes.dart';
 part 'sub_routes/history_routes.dart';
 part 'sub_routes/settings_routes.dart';
+part 'sub_routes/scan_routes.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>(
   debugLabel: 'root',

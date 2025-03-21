@@ -210,7 +210,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         children: [
                           AnimatedContainer(
                             duration: const Duration(milliseconds: 1500),
-                            height: context.height * .25,
+                            height:
+                                MediaQuery.of(context).orientation ==
+                                        Orientation.portrait
+                                    ? context.height * .25
+                                    : context.height * .4,
                             width: context.width * .40,
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
@@ -229,20 +233,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             ),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                Image.asset(
-                                  isDarkMode
-                                      ? item.iconDarkPath
-                                      : item.iconPath,
-                                  fit: BoxFit.fitWidth,
-                                  height: 80,
-                                  width: 80,
+                                Flexible(
+                                  child: Image.asset(
+                                    isDarkMode
+                                        ? item.iconDarkPath
+                                        : item.iconPath,
+                                    fit: BoxFit.contain,
+                                    height:
+                                        context.isPortrait
+                                            ? context.height * .08
+                                            : context.height * .15,
+                                  ),
                                 ),
                                 const Gap(12),
-                                Text(
-                                  item.label,
-                                  style: context.textTheme.labelLarge!.copyWith(
-                                    fontWeight: FontWeight.w600,
+                                Flexible(
+                                  child: Text(
+                                    item.label,
+                                    style: context.textTheme.labelLarge!
+                                        .copyWith(fontWeight: FontWeight.w600),
+                                    textAlign: TextAlign.center,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],

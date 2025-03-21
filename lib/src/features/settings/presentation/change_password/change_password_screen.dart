@@ -12,7 +12,8 @@ class ChangePasswordScreen extends ConsumerStatefulWidget {
   const ChangePasswordScreen({super.key});
 
   @override
-  ConsumerState<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
+  ConsumerState<ChangePasswordScreen> createState() =>
+      _ChangePasswordScreenState();
 }
 
 class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
@@ -71,7 +72,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               style: context.textTheme.titleSmall?.copyWith(
                 color: AppColors.light,
               ),
-            )
+            ),
           ],
         ),
         body: Padding(
@@ -153,7 +154,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                         //         newPassword: _newPasswordController.text));
                       }
                     },
-                  )
+                  ),
                 ],
               ),
             ),

@@ -13,6 +13,7 @@ import 'package:ugz_app/src/routes/router_config.dart';
 import 'package:ugz_app/src/utils/extensions/custom_extensions.dart';
 import 'package:ugz_app/src/widgets/custom_view.dart';
 import 'package:ugz_app/src/widgets/dialog/exit_app_dialog.dart';
+import 'package:ugz_app/src/widgets/shell/big_screen_navigation_bar.dart';
 
 // import 'big_screen_navigation_bar.dart';
 import 'small_screen_navigation_bar.dart';
@@ -30,8 +31,14 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
   void initState() {
     super.initState();
     WidgetsFlutterBinding.ensureInitialized().addPostFrameCallback((_) {
-      ref.read(geolocationServiceProvider.notifier).startTracking();
+      // ref.read(geolocationServiceProvider.notifier).startTracking();
     });
+  }
+
+  @override
+  void dispose() {
+    ;
+    super.dispose();
   }
 
   @override
@@ -54,7 +61,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
       return Scaffold(
         body: Row(
           children: [
-            // BigScreenNavigationBar(selectedScreen: context.location),
+            BigScreenNavigationBar(selectedScreen: context.location),
             Expanded(child: widget.child),
           ],
         ),
@@ -138,8 +145,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
           backgroundColor: context.colorScheme.surfaceContainer,
           floatingActionButton: FloatingActionButton(
             shape: const CircleBorder(),
-            // onPressed: () => ref.read(routerProvider).push(Routes.SCAN),
-            onPressed: () {},
+            onPressed: () => ScanRoute().push(context),
             backgroundColor: AppColors.primary,
             child: Assets.icons.scan.svg(),
           ),

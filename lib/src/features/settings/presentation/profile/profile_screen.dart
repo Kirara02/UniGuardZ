@@ -40,7 +40,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _emailController.dispose();
   }
 
-  
   @override
   Widget build(BuildContext context) {
     return CustomView(
@@ -63,60 +62,64 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
         ],
       ),
-      body: Container(
-        height: context.height * .9,
+      body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              ClipOval(
-                child: Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: context.colorScheme.onSurfaceVariant,
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                ClipOval(
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: context.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
-              ),
-              const Gap(20),
-              UGTextField(
-                label: context.l10n!.name,
-                hintText: 'Enter your name',
-                controller: _nameController,
-                readOnly: widget.isEdit ? false : true,
-                textInputAction: TextInputAction.done,
-              ),
-              const SizedBox(height: 20),
-              UGTextField(
-                label: context.l10n!.email,
-                hintText: 'Enter your email',
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                readOnly: widget.isEdit ? false : true,
-                textInputAction: TextInputAction.done,
-              ),
-              const SizedBox(height: 20),
-              UGTextField(
-                label: context.l10n!.role,
-                hintText: 'Enter Roll',
-                controller: _roleController,
-                keyboardType: TextInputType.emailAddress,
-                readOnly: true,
-                enabled: true,
-                textInputAction: TextInputAction.done,
-              ),
-              const Spacer(),
-              if (widget.isEdit)
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {},
-                    child: Text(context.l10n!.submit),
-                  ),
+                const Gap(20),
+                UGTextField(
+                  label: context.l10n!.name,
+                  hintText: 'Enter your name',
+                  controller: _nameController,
+                  readOnly: widget.isEdit ? false : true,
+                  textInputAction: TextInputAction.done,
                 ),
-            ],
+                const SizedBox(height: 20),
+                UGTextField(
+                  label: context.l10n!.email,
+                  hintText: 'Enter your email',
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  readOnly: widget.isEdit ? false : true,
+                  textInputAction: TextInputAction.done,
+                ),
+                const SizedBox(height: 20),
+                UGTextField(
+                  label: context.l10n!.role,
+                  hintText: 'Enter Roll',
+                  controller: _roleController,
+                  keyboardType: TextInputType.emailAddress,
+                  readOnly: true,
+                  enabled: true,
+                  textInputAction: TextInputAction.done,
+                ),
+                const SizedBox(height: 40),
+                if (widget.isEdit)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 20),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {},
+                        child: Text(context.l10n!.submit),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

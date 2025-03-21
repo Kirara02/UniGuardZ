@@ -12,16 +12,17 @@ class CustomView extends StatelessWidget {
   final FloatingActionButtonLocation? floatingActionButtonLocation;
   final bool canPop;
 
-  const CustomView(
-      {super.key,
-      required this.header,
-      required this.body,
-      this.bottomNavigationBar,
-      this.resizeToAvoidBottomInset,
-      this.backgroundColor,
-      this.floatingActionButton,
-      this.floatingActionButtonLocation,
-      this.canPop = true});
+  const CustomView({
+    super.key,
+    required this.header,
+    required this.body,
+    this.bottomNavigationBar,
+    this.resizeToAvoidBottomInset,
+    this.backgroundColor,
+    this.floatingActionButton,
+    this.floatingActionButtonLocation,
+    this.canPop = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -35,9 +36,7 @@ class CustomView extends StatelessWidget {
       floatingActionButtonLocation: floatingActionButtonLocation,
       body: Container(
         height: context.height,
-        decoration: BoxDecoration(
-          color: AppColors.primary,
-        ),
+        decoration: BoxDecoration(color: AppColors.primary),
         child: Column(
           children: [
             header,
@@ -52,7 +51,7 @@ class CustomView extends StatelessWidget {
                 ),
                 child: body,
               ),
-            )
+            ),
           ],
         ),
       ),
@@ -74,7 +73,7 @@ class CustomViewHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: context.height * 0.1,
+      height: context.isPortrait ? context.height * 0.1 : context.height * 0.2,
       padding: const EdgeInsets.fromLTRB(16, 28, 16, 0),
       child: Row(
         mainAxisAlignment: mainAxisAlignment,
