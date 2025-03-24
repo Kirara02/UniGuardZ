@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:ugz_app/src/constants/colors.dart';
 import 'package:ugz_app/src/constants/gen/assets.gen.dart';
 import 'package:ugz_app/src/constants/navigation_bar_data.dart';
 import 'package:ugz_app/src/routes/router_config.dart';
@@ -25,8 +27,13 @@ class BigScreenNavigationBar extends StatelessWidget {
     final Widget leadingIcon;
     if (context.isDesktop) {
       leadingIcon = TextButton.icon(
-        onPressed: () => const SettingsRoute().push(context),
-        icon: ImageIcon(AssetImage(Assets.images.uniguardIcon.path), size: 48),
+        onPressed: () {},
+        icon: SvgPicture.asset(
+          Assets.icons.uniguardLogo.path,
+          width: 48,
+          height: 48,
+          colorFilter: ColorFilter.mode(AppColors.primary, BlendMode.srcIn),
+        ),
         label: Text(context.l10n!.app_name),
         style: TextButton.styleFrom(
           foregroundColor: context.textTheme.bodyLarge?.color,
@@ -34,8 +41,13 @@ class BigScreenNavigationBar extends StatelessWidget {
       );
     } else {
       leadingIcon = IconButton(
-        onPressed: () => const SettingsRoute().push(context),
-        icon: ImageIcon(AssetImage(Assets.images.uniguardIcon.path), size: 48),
+        onPressed: () {},
+        icon: SvgPicture.asset(
+          Assets.icons.uniguardLogo.path,
+          width: 48,
+          height: 48,
+          colorFilter: ColorFilter.mode(AppColors.primary, BlendMode.srcIn),
+        ),
       );
     }
 
@@ -57,6 +69,10 @@ class BigScreenNavigationBar extends StatelessWidget {
       selectedIndex: NavigationBarData.indexWherePathOrZero(selectedScreen),
       onDestinationSelected:
           (value) => NavigationBarData.navList[value].go(context),
+      trailing: IconButton(
+        onPressed: () => SettingsRoute().push(context),
+        icon: Icon(Icons.settings_rounded),
+      ),
     );
   }
 }

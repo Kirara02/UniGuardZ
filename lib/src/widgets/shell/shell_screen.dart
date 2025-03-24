@@ -37,7 +37,6 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
 
   @override
   void dispose() {
-    ;
     super.dispose();
   }
 
@@ -58,12 +57,29 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
     });
 
     if (context.isTablet) {
-      return Scaffold(
-        body: Row(
-          children: [
-            BigScreenNavigationBar(selectedScreen: context.location),
-            Expanded(child: widget.child),
-          ],
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) async {
+          if (!didPop) {
+            final shouldExit = await showExitDialog(context);
+            if (shouldExit == true) {
+              exitApp();
+            }
+          }
+        },
+        child: Scaffold(
+          body: Row(
+            children: [
+              BigScreenNavigationBar(selectedScreen: context.location),
+              Expanded(child: widget.child),
+            ],
+          ),
+          floatingActionButton: FloatingActionButton(
+            shape: const CircleBorder(),
+            onPressed: () => ScanRoute().push(context),
+            backgroundColor: AppColors.primary,
+            child: Assets.icons.scan.svg(),
+          ),
         ),
       );
     } else {
