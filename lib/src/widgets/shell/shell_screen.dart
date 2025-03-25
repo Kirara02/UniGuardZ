@@ -129,17 +129,23 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
               Expanded(child: widget.child),
             ],
           ),
-          floatingActionButton: FloatingActionButton.large(
-            shape: const CircleBorder(),
-            onPressed: () => ScanRoute().push(context),
-            backgroundColor: AppColors.primary,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Assets.icons.scan.svg(width: 42),
-                SizedBox(height: 4),
-                Text("Scan", style: context.textTheme.labelMedium),
-              ],
+          floatingActionButton: SizedBox(
+            width: 72,
+            height: 72,
+            child: FittedBox(
+              child: FloatingActionButton.large(
+                shape: const CircleBorder(),
+                onPressed: () => ScanRoute().push(context),
+                backgroundColor: AppColors.primary,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Assets.icons.scan.svg(width: 42),
+                    SizedBox(height: 4),
+                    Text("Scan", style: context.textTheme.labelMedium),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
@@ -221,17 +227,23 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
           ),
           body: widget.child,
           backgroundColor: context.colorScheme.surfaceContainer,
-          floatingActionButton: FloatingActionButton.large(
-            shape: const CircleBorder(),
-            onPressed: () => ScanRoute().push(context),
-            backgroundColor: AppColors.primary,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Assets.icons.scan.svg(width: 42),
-                SizedBox(height: 4),
-                Text("Scan", style: context.textTheme.labelMedium),
-              ],
+          floatingActionButton: SizedBox(
+            width: 72,
+            height: 72,
+            child: FittedBox(
+              child: FloatingActionButton.large(
+                shape: const CircleBorder(),
+                onPressed: () => ScanRoute().push(context),
+                backgroundColor: AppColors.primary,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Assets.icons.scan.svg(width: 42),
+                    SizedBox(height: 4),
+                    Text("Scan", style: context.textTheme.labelMedium),
+                  ],
+                ),
+              ),
             ),
           ),
           floatingActionButtonLocation:
