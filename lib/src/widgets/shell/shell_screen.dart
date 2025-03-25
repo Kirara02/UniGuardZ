@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:badges/badges.dart' as badges;
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:ugz_app/src/constants/colors.dart';
 import 'package:ugz_app/src/constants/gen/assets.gen.dart';
 import 'package:ugz_app/src/features/auth/providers/user_data_provider.dart';
@@ -13,9 +15,8 @@ import 'package:ugz_app/src/routes/router_config.dart';
 import 'package:ugz_app/src/utils/extensions/custom_extensions.dart';
 import 'package:ugz_app/src/widgets/custom_view.dart';
 import 'package:ugz_app/src/widgets/dialog/exit_app_dialog.dart';
-import 'package:ugz_app/src/widgets/shell/big_screen_navigation_bar.dart';
 
-// import 'big_screen_navigation_bar.dart';
+import 'big_screen_navigation_bar.dart';
 import 'small_screen_navigation_bar.dart';
 
 class ShellScreen extends ConsumerStatefulWidget {
@@ -27,16 +28,70 @@ class ShellScreen extends ConsumerStatefulWidget {
 }
 
 class _ShellScreenState extends ConsumerState<ShellScreen> {
+  StreamSubscription? _scanSubscription;
+  List<ScanResult> _scanResults = [];
+
+  Future<void> startBluetoothScan() async {
+    try {
+      // Check if Bluetooth is supported
+      if (await FlutterBluePlus.isSupported == false) {
+        throw Exception('Bluetooth is not supported on this device');
+      }
+
+      // Check if Bluetooth adapter is on
+      if (await FlutterBluePlus.adapterState.first ==
+          BluetoothAdapterState.off) {
+        throw Exception('Bluetooth is turned off');
+      }
+
+      // Clear previous results
+      _scanResults = [];
+
+      // Start scanning
+      _scanSubscription = FlutterBluePlus.scanResults.listen((results) {
+        setState(() {
+          _scanResults = results;
+        });
+
+        // Print scan results as they come in
+        for (var result in results) {
+          print(
+            'Found device: ${result.device.name} (${result.device.remoteId})',
+          );
+          print('RSSI: ${result.rssi}');
+          print('Advertisement data: ${result.advertisementData}');
+          print('-------------------');
+        }
+      });
+
+      // Start scanning with timeout
+      await FlutterBluePlus.startScan(timeout: const Duration(seconds: 4));
+    } catch (e) {
+      print('Error scanning Bluetooth: $e');
+    }
+  }
+
+  Future<void> stopBluetoothScan() async {
+    try {
+      await FlutterBluePlus.stopScan();
+      await _scanSubscription?.cancel();
+    } catch (e) {
+      print('Error stopping Bluetooth scan: $e');
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     WidgetsFlutterBinding.ensureInitialized().addPostFrameCallback((_) {
       // ref.read(geolocationServiceProvider.notifier).startTracking();
+      // startBluetoothScan();
     });
   }
 
   @override
   void dispose() {
+    stopBluetoothScan();
     super.dispose();
   }
 
@@ -74,11 +129,18 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
               Expanded(child: widget.child),
             ],
           ),
-          floatingActionButton: FloatingActionButton(
+          floatingActionButton: FloatingActionButton.large(
             shape: const CircleBorder(),
             onPressed: () => ScanRoute().push(context),
             backgroundColor: AppColors.primary,
-            child: Assets.icons.scan.svg(),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Assets.icons.scan.svg(width: 42),
+                SizedBox(height: 4),
+                Text("Scan", style: context.textTheme.labelMedium),
+              ],
+            ),
           ),
         ),
       );
@@ -159,11 +221,18 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
           ),
           body: widget.child,
           backgroundColor: context.colorScheme.surfaceContainer,
-          floatingActionButton: FloatingActionButton(
+          floatingActionButton: FloatingActionButton.large(
             shape: const CircleBorder(),
             onPressed: () => ScanRoute().push(context),
             backgroundColor: AppColors.primary,
-            child: Assets.icons.scan.svg(),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Assets.icons.scan.svg(width: 42),
+                SizedBox(height: 4),
+                Text("Scan", style: context.textTheme.labelMedium),
+              ],
+            ),
           ),
           floatingActionButtonLocation:
               FloatingActionButtonLocation.centerDocked,
