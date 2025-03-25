@@ -81,106 +81,92 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        try {
-          if (mounted) {
-            // Safely stop scanning before popping
-            final controller = ref.read(scanControllerProvider.notifier);
-            controller.stopScanning();
+    return CustomView(
+      header: CustomViewHeader(
+        children: [
+          IconButton(
+            onPressed: _navigateBack,
+            icon: FaIcon(
+              FontAwesomeIcons.chevronLeft,
+              size: 20,
+              color: AppColors.light,
+            ),
+          ),
+          Text(
+            context.l10n!.scan,
+            style: context.textTheme.titleSmall?.copyWith(
+              color: AppColors.light,
+            ),
+          ),
+        ],
+      ),
+      body: Consumer(
+        builder: (context, ref, child) {
+          late final ScanState state;
+          try {
+            state = ref.watch(scanControllerProvider);
+          } catch (e) {
+            debugPrint('Error watching scanControllerProvider: $e');
+            return const Center(child: Text('An error occurred'));
           }
-        } catch (e) {
-          debugPrint('Error in onWillPop: $e');
-        }
-        return true;
-      },
-      child: CustomView(
-        header: CustomViewHeader(
-          children: [
-            IconButton(
-              onPressed: _navigateBack,
-              icon: FaIcon(
-                FontAwesomeIcons.chevronLeft,
-                size: 20,
-                color: AppColors.light,
-              ),
-            ),
-            Text(
-              context.l10n!.scan,
-              style: context.textTheme.titleSmall?.copyWith(
-                color: AppColors.light,
-              ),
-            ),
-          ],
-        ),
-        body: Consumer(
-          builder: (context, ref, child) {
-            late final ScanState state;
-            try {
-              state = ref.watch(scanControllerProvider);
-            } catch (e) {
-              debugPrint('Error watching scanControllerProvider: $e');
-              return const Center(child: Text('An error occurred'));
-            }
 
-            // Check if submission just completed successfully
-            if (_previousSubmitting &&
-                !state.isSubmitting &&
-                state.error == null &&
-                !_showUploadSuccess) {
-              // Use post-frame callback to avoid setState during build
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (!_isDisposed && mounted) {
-                  setState(() {
-                    _showUploadSuccess = true;
-                  });
-                }
-              });
-            }
-            _previousSubmitting = state.isSubmitting;
+          // Check if submission just completed successfully
+          if (_previousSubmitting &&
+              !state.isSubmitting &&
+              state.error == null &&
+              !_showUploadSuccess) {
+            // Use post-frame callback to avoid setState during build
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!_isDisposed && mounted) {
+                setState(() {
+                  _showUploadSuccess = true;
+                });
+              }
+            });
+          }
+          _previousSubmitting = state.isSubmitting;
 
-            if (!_isNfcAvailable) {
-              return _buildNfcUnavailableView();
-            }
+          if (!_isNfcAvailable) {
+            return _buildNfcUnavailableView();
+          }
 
-            // Show loading overlay when submitting
-            return SizedBox(
-              width: double.infinity,
-              height: double.infinity,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child:
-                        _showUploadSuccess
-                            ? _buildUploadSuccessView(state.tag)
-                            : _buildNfcContent(state),
-                  ),
-                  if (state.isSubmitting)
-                    Container(
-                      width: double.infinity,
-                      height: double.infinity,
-                      color: Colors.black54,
-                      child: const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            CircularProgressIndicator(),
-                            SizedBox(height: 16),
-                            Text(
-                              'Uploading scan data...',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ],
-                        ),
+          // Show loading overlay when submitting
+          return SizedBox(
+            width: double.infinity,
+            height: double.infinity,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child:
+                      _showUploadSuccess
+                          ? _buildUploadSuccessView(state.tag)
+                          : _buildNfcContent(state),
+                ),
+                if (state.isSubmitting)
+                  Container(
+                    width: double.infinity,
+                    height: double.infinity,
+                    color: Colors.black54,
+                    child: const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 16),
+                          Text(
+                            'Uploading scan data...',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ],
                       ),
                     ),
-                ],
-              ),
-            );
-          },
-        ),
+                  ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
