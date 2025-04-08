@@ -65,6 +65,15 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.2"
+  beacons_plugin:
+    dependency: "direct main"
+    description:
+      path: "."
+      ref: master
+      resolved-ref: "6e6b0fc47ea3637fb1bc434b4fb3fa5ebaa0e56b"
+      url: "https://github.com/Kirara02/simple_beacons_flutter.git"
+    source: git
+    version: "2.0.8"
   bluez:
     dependency: transitive
     description:

@@ -1,10 +1,11 @@
 import 'dart:async';
+import 'dart:io';
+import 'package:beacons_plugin/beacons_plugin.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:badges/badges.dart' as badges;
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:ugz_app/src/constants/colors.dart';
 import 'package:ugz_app/src/constants/gen/assets.gen.dart';
 import 'package:ugz_app/src/features/auth/providers/user_data_provider.dart';
@@ -29,55 +30,125 @@ class ShellScreen extends ConsumerStatefulWidget {
 
 class _ShellScreenState extends ConsumerState<ShellScreen> {
   StreamSubscription? _scanSubscription;
-  List<ScanResult> _scanResults = [];
 
-  Future<void> startBluetoothScan() async {
+  final StreamController<String> beaconEventsController =
+      StreamController<String>.broadcast();
+
+  String _beaconResult = 'Not Scanned Yet.';
+  int _nrMessagesReceived = 0;
+  var isRunning = false;
+  List<String> _results = [];
+  bool _isInForeground = true;
+
+  Future<void> startBeaconScan() async {
     try {
-      // Check if Bluetooth is supported
-      if (await FlutterBluePlus.isSupported == false) {
-        throw Exception('Bluetooth is not supported on this device');
-      }
+      final StreamController<String> beaconEventsController =
+          StreamController<String>.broadcast();
+      BeaconsPlugin.listenToBeacons(beaconEventsController);
 
-      // Check if Bluetooth adapter is on
-      if (await FlutterBluePlus.adapterState.first ==
-          BluetoothAdapterState.off) {
-        throw Exception('Bluetooth is turned off');
-      }
+      beaconEventsController.stream.listen(
+        (data) {
+          if (data.isNotEmpty) {
+            setState(() {
+              // _beaconResult = data;
+            });
+            print("Beacons DataReceived: " + data);
+          }
+        },
+        onDone: () {},
+        onError: (error) {
+          print("Error: $error");
+        },
+      );
 
-      // Clear previous results
-      _scanResults = [];
-
-      // Start scanning
-      _scanSubscription = FlutterBluePlus.scanResults.listen((results) {
-        setState(() {
-          _scanResults = results;
-        });
-
-        // Print scan results as they come in
-        for (var result in results) {
-          print(
-            'Found device: ${result.device.name} (${result.device.remoteId})',
-          );
-          print('RSSI: ${result.rssi}');
-          print('Advertisement data: ${result.advertisementData}');
-          print('-------------------');
-        }
-      });
-
-      // Start scanning with timeout
-      await FlutterBluePlus.startScan(timeout: const Duration(seconds: 4));
+      await BeaconsPlugin.startMonitoring();
     } catch (e) {
       print('Error scanning Bluetooth: $e');
     }
   }
 
-  Future<void> stopBluetoothScan() async {
+  Future<void> stopBeaconScan() async {
     try {
-      await FlutterBluePlus.stopScan();
+      await BeaconsPlugin.stopMonitoring();
       await _scanSubscription?.cancel();
+      setState(() {
+        _scanSubscription = null;
+      });
     } catch (e) {
       print('Error stopping Bluetooth scan: $e');
     }
+  }
+
+  // Platform messages are asynchronous, so we initialize in an async method.
+  Future<void> initPlatformState() async {
+    if (Platform.isAndroid) {
+      //Prominent disclosure
+      await BeaconsPlugin.setDisclosureDialogMessage(
+        title: "Background Locations",
+        message:
+            "[This app] collects location data to enable [feature], [feature], & [feature] even when the app is closed or not in use",
+      );
+
+      //Only in case, you want the dialog to be shown again. By Default, dialog will never be shown if permissions are granted.
+      //await BeaconsPlugin.clearDisclosureDialogShowFlag(false);
+    }
+
+    if (Platform.isAndroid) {
+      BeaconsPlugin.channel.setMethodCallHandler((call) async {
+        print("Method: ${call.method}");
+        if (call.method == 'scannerReady') {
+          // _showNotification("Beacons monitoring started..");
+          await BeaconsPlugin.startMonitoring();
+          setState(() {
+            isRunning = true;
+          });
+        } else if (call.method == 'isPermissionDialogShown') {
+          // _showNotification(
+          //   "Prominent disclosure message is shown to the user!",
+          // );
+        }
+      });
+    } else if (Platform.isIOS) {
+      // _showNotification("Beacons monitoring started..");
+      await BeaconsPlugin.startMonitoring();
+      setState(() {
+        isRunning = true;
+      });
+    }
+
+    BeaconsPlugin.listenToBeacons(beaconEventsController);
+
+    BeaconsPlugin.setForegroundScanPeriodForAndroid(
+      foregroundScanPeriod: 2200,
+      foregroundBetweenScanPeriod: 10,
+    );
+
+    beaconEventsController.stream.listen(
+      (data) {
+        if (data.isNotEmpty && isRunning) {
+          setState(() {
+            _beaconResult = data;
+            _results.add(_beaconResult);
+            _nrMessagesReceived++;
+          });
+
+          if (!_isInForeground) {
+            // _showNotification("Beacons DataReceived: " + data);
+          }
+
+          print("Beacons DataReceived: " + data);
+        }
+      },
+      onDone: () {},
+      onError: (error) {
+        print("Error: $error");
+      },
+    );
+
+    //Send 'true' to run in background
+    await BeaconsPlugin.runInBackground(false);
+
+    if (!mounted) return;
   }
 
   @override
@@ -91,7 +162,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
 
   @override
   void dispose() {
-    stopBluetoothScan();
+    stopBeaconScan();
     super.dispose();
   }
 
@@ -169,6 +240,35 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
               Assets.images.loginLogo.image(width: 120),
               Row(
                 children: [
+                  IconButton(
+                    onPressed: () {
+                      print("Beacon Start");
+                      // Start Bluetooth scanning when button is clicked
+                      if (!isRunning) {
+                        initPlatformState().then((_) {
+                          setState(() {});
+                          context.showSnackBar(
+                            'Scanning for Bluetooth devices...',
+                          );
+                        });
+                      } else {
+                        stopBeaconScan().then((_) {
+                          setState(() {});
+                          context.showSnackBar('Bluetooth scanning stopped');
+                        });
+                      }
+                      setState(() {
+                        isRunning = !isRunning;
+                      });
+                    },
+                    icon: FaIcon(
+                      !isRunning
+                          ? FontAwesomeIcons.bluetoothB
+                          : FontAwesomeIcons.bluetooth,
+                      size: 20,
+                      color: Colors.white,
+                    ),
+                  ),
                   pendingCount.when(
                     data: (data) {
                       if (data != null && data > 0) {
@@ -200,6 +300,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
                     error: (err, _) => const SizedBox(),
                     loading: () => const SizedBox(),
                   ),
+
                   IconButton(
                     onPressed: () {
                       SettingsRoute().push(context);
@@ -238,9 +339,9 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Assets.icons.scan.svg(width: 42),
+                    Assets.images.nfcLogoWhite.image(width: 48),
                     SizedBox(height: 4),
-                    Text("Scan", style: context.textTheme.labelMedium),
+                    Text("Scan", style: context.textTheme.labelLarge),
                   ],
                 ),
               ),

@@ -187,6 +187,10 @@ class $AssetsImagesGen {
   AssetGenImage get nfcFailed =>
       const AssetGenImage('assets/images/nfc_failed.png');
 
+  /// File path: assets/images/nfc_logo_white.png
+  AssetGenImage get nfcLogoWhite =>
+      const AssetGenImage('assets/images/nfc_logo_white.png');
+
   /// File path: assets/images/nfc_success.png
   AssetGenImage get nfcSuccess =>
       const AssetGenImage('assets/images/nfc_success.png');
@@ -260,6 +264,7 @@ class $AssetsImagesGen {
     loginLogo,
     moon,
     nfcFailed,
+    nfcLogoWhite,
     nfcSuccess,
     notFound,
     notSupport,

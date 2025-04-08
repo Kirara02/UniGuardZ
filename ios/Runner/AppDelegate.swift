@@ -3,6 +3,8 @@ import UIKit
 import GoogleMaps
 import flutter_local_notifications
 import flutter_background_service_ios
+import CoreLocation
+import CoreBluetooth
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -13,6 +15,8 @@ import flutter_background_service_ios
     FlutterLocalNotificationsPlugin.setPluginRegistrantCallback { (registry) in
         GeneratedPluginRegistrant.register(with: registry)
     }
+
+    locationManager.requestAlwaysAuthorization()
 
     SwiftFlutterBackgroundServicePlugin.taskIdentifier = "com.uniguard.uniguardz"
     
