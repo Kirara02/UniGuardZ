@@ -1,13 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:badges/badges.dart' as badges;
 import 'package:ugz_app/src/constants/colors.dart';
 import 'package:ugz_app/src/constants/gen/assets.gen.dart';
 import 'package:ugz_app/src/features/auth/providers/user_data_provider.dart';
-import 'package:ugz_app/src/global_providers/geolocation_tracking_service_providers.dart';
 import 'package:ugz_app/src/global_providers/pending_count_providers.dart';
 import 'package:ugz_app/src/global_providers/uniguard_background_service.dart';
 import 'package:ugz_app/src/local/usecases/delete_all_pending_forms/delete_all_pending_forms.dart';
@@ -147,28 +145,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
                     error: (err, _) => const SizedBox(),
                     loading: () => const SizedBox(),
                   ),
-                  IconButton(
-                    onPressed: () async {
-                      if (await ref
-                          .read(uniguardServiceProvider.notifier)
-                          .isServiceRunning()) {
-                        ref
-                            .read(uniguardServiceProvider.notifier)
-                            .stopService();
-                        print("stop");
-                      } else {
-                        ref
-                            .read(uniguardServiceProvider.notifier)
-                            .startService();
-                        print("start");
-                      }
-                    },
-                    icon: const FaIcon(
-                      FontAwesomeIcons.alignCenter,
-                      size: 20,
-                      color: Colors.white,
-                    ),
-                  ),
+
                   IconButton(
                     onPressed: () {
                       SettingsRoute().push(context);
