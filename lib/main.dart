@@ -44,7 +44,6 @@ Future<void> main() async {
   }
 
   GoRouter.optionURLReflectsImperativeAPIs = true;
-  FlutterBluePlus.setLogLevel(LogLevel.verbose, color: true);
 
   runApp(
     ProviderScope(

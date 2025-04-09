@@ -1,8 +1,6 @@
-import 'dart:async';
-import 'dart:io';
-import 'package:beacons_plugin/beacons_plugin.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:badges/badges.dart' as badges;
@@ -11,6 +9,7 @@ import 'package:ugz_app/src/constants/gen/assets.gen.dart';
 import 'package:ugz_app/src/features/auth/providers/user_data_provider.dart';
 import 'package:ugz_app/src/global_providers/geolocation_tracking_service_providers.dart';
 import 'package:ugz_app/src/global_providers/pending_count_providers.dart';
+import 'package:ugz_app/src/global_providers/uniguard_background_service.dart';
 import 'package:ugz_app/src/local/usecases/delete_all_pending_forms/delete_all_pending_forms.dart';
 import 'package:ugz_app/src/routes/router_config.dart';
 import 'package:ugz_app/src/utils/extensions/custom_extensions.dart';
@@ -29,140 +28,16 @@ class ShellScreen extends ConsumerStatefulWidget {
 }
 
 class _ShellScreenState extends ConsumerState<ShellScreen> {
-  StreamSubscription? _scanSubscription;
-
-  final StreamController<String> beaconEventsController =
-      StreamController<String>.broadcast();
-
-  String _beaconResult = 'Not Scanned Yet.';
-  int _nrMessagesReceived = 0;
-  var isRunning = false;
-  List<String> _results = [];
-  bool _isInForeground = true;
-
-  Future<void> startBeaconScan() async {
-    try {
-      final StreamController<String> beaconEventsController =
-          StreamController<String>.broadcast();
-      BeaconsPlugin.listenToBeacons(beaconEventsController);
-
-      beaconEventsController.stream.listen(
-        (data) {
-          if (data.isNotEmpty) {
-            setState(() {
-              // _beaconResult = data;
-            });
-            print("Beacons DataReceived: " + data);
-          }
-        },
-        onDone: () {},
-        onError: (error) {
-          print("Error: $error");
-        },
-      );
-
-      await BeaconsPlugin.startMonitoring();
-    } catch (e) {
-      print('Error scanning Bluetooth: $e');
-    }
-  }
-
-  Future<void> stopBeaconScan() async {
-    try {
-      await BeaconsPlugin.stopMonitoring();
-      await _scanSubscription?.cancel();
-      setState(() {
-        _scanSubscription = null;
-      });
-    } catch (e) {
-      print('Error stopping Bluetooth scan: $e');
-    }
-  }
-
-  // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> initPlatformState() async {
-    if (Platform.isAndroid) {
-      //Prominent disclosure
-      await BeaconsPlugin.setDisclosureDialogMessage(
-        title: "Background Locations",
-        message:
-            "[This app] collects location data to enable [feature], [feature], & [feature] even when the app is closed or not in use",
-      );
-
-      //Only in case, you want the dialog to be shown again. By Default, dialog will never be shown if permissions are granted.
-      //await BeaconsPlugin.clearDisclosureDialogShowFlag(false);
-    }
-
-    if (Platform.isAndroid) {
-      BeaconsPlugin.channel.setMethodCallHandler((call) async {
-        print("Method: ${call.method}");
-        if (call.method == 'scannerReady') {
-          // _showNotification("Beacons monitoring started..");
-          await BeaconsPlugin.startMonitoring();
-          setState(() {
-            isRunning = true;
-          });
-        } else if (call.method == 'isPermissionDialogShown') {
-          // _showNotification(
-          //   "Prominent disclosure message is shown to the user!",
-          // );
-        }
-      });
-    } else if (Platform.isIOS) {
-      // _showNotification("Beacons monitoring started..");
-      await BeaconsPlugin.startMonitoring();
-      setState(() {
-        isRunning = true;
-      });
-    }
-
-    BeaconsPlugin.listenToBeacons(beaconEventsController);
-
-    BeaconsPlugin.setForegroundScanPeriodForAndroid(
-      foregroundScanPeriod: 2200,
-      foregroundBetweenScanPeriod: 10,
-    );
-
-    beaconEventsController.stream.listen(
-      (data) {
-        if (data.isNotEmpty && isRunning) {
-          setState(() {
-            _beaconResult = data;
-            _results.add(_beaconResult);
-            _nrMessagesReceived++;
-          });
-
-          if (!_isInForeground) {
-            // _showNotification("Beacons DataReceived: " + data);
-          }
-
-          print("Beacons DataReceived: " + data);
-        }
-      },
-      onDone: () {},
-      onError: (error) {
-        print("Error: $error");
-      },
-    );
-
-    //Send 'true' to run in background
-    await BeaconsPlugin.runInBackground(false);
-
-    if (!mounted) return;
-  }
-
   @override
   void initState() {
     super.initState();
     WidgetsFlutterBinding.ensureInitialized().addPostFrameCallback((_) {
-      // ref.read(geolocationServiceProvider.notifier).startTracking();
-      // startBluetoothScan();
+      ref.read(uniguardServiceProvider.notifier).startService();
     });
   }
 
   @override
   void dispose() {
-    stopBeaconScan();
     super.dispose();
   }
 
@@ -174,7 +49,8 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
       if (previous != null && next is AsyncData && next.value == null) {
         // Stop background service when logging out
 
-        ref.read(geolocationServiceProvider.notifier).stopTracking();
+        // ref.read(geolocationServiceProvider.notifier).stopTracking();
+        ref.read(uniguardServiceProvider.notifier).stopService();
 
         LoginRoute().go(context);
       } else if (next is AsyncError) {
@@ -240,35 +116,6 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
               Assets.images.loginLogo.image(width: 120),
               Row(
                 children: [
-                  IconButton(
-                    onPressed: () {
-                      print("Beacon Start");
-                      // Start Bluetooth scanning when button is clicked
-                      if (!isRunning) {
-                        initPlatformState().then((_) {
-                          setState(() {});
-                          context.showSnackBar(
-                            'Scanning for Bluetooth devices...',
-                          );
-                        });
-                      } else {
-                        stopBeaconScan().then((_) {
-                          setState(() {});
-                          context.showSnackBar('Bluetooth scanning stopped');
-                        });
-                      }
-                      setState(() {
-                        isRunning = !isRunning;
-                      });
-                    },
-                    icon: FaIcon(
-                      !isRunning
-                          ? FontAwesomeIcons.bluetoothB
-                          : FontAwesomeIcons.bluetooth,
-                      size: 20,
-                      color: Colors.white,
-                    ),
-                  ),
                   pendingCount.when(
                     data: (data) {
                       if (data != null && data > 0) {
@@ -300,7 +147,28 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
                     error: (err, _) => const SizedBox(),
                     loading: () => const SizedBox(),
                   ),
-
+                  IconButton(
+                    onPressed: () async {
+                      if (await ref
+                          .read(uniguardServiceProvider.notifier)
+                          .isServiceRunning()) {
+                        ref
+                            .read(uniguardServiceProvider.notifier)
+                            .stopService();
+                        print("stop");
+                      } else {
+                        ref
+                            .read(uniguardServiceProvider.notifier)
+                            .startService();
+                        print("start");
+                      }
+                    },
+                    icon: const FaIcon(
+                      FontAwesomeIcons.alignCenter,
+                      size: 20,
+                      color: Colors.white,
+                    ),
+                  ),
                   IconButton(
                     onPressed: () {
                       SettingsRoute().push(context);

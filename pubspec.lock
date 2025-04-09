@@ -70,7 +70,7 @@ packages:
     description:
       path: "."
       ref: master
-      resolved-ref: "6e6b0fc47ea3637fb1bc434b4fb3fa5ebaa0e56b"
+      resolved-ref: "81a80262ce54cb116ecc2050a0a044d44e606e3b"
       url: "https://github.com/Kirara02/simple_beacons_flutter.git"
     source: git
     version: "2.0.8"

@@ -1,10 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:nfc_manager/nfc_manager.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:ugz_app/src/features/home/domain/model/nfc_tag_model.dart';
-import 'package:ugz_app/src/features/home/domain/usecase/nfc_scan_submit/nfc_scan_submit_params.dart';
-import 'package:ugz_app/src/features/home/domain/usecase/nfc_scan_submit/nfc_scan_submit_usecase.dart';
+import 'package:ugz_app/src/features/home/domain/usecase/submit_checkpoint/submit_checkpoint_params.dart';
+import 'package:ugz_app/src/features/home/domain/usecase/submit_checkpoint/submit_checkpoint_usecase.dart';
+import 'package:ugz_app/src/global_providers/global_providers.dart';
 
 part 'scan_controller.g.dart';
 
@@ -132,14 +134,36 @@ class ScanController extends _$ScanController {
       final now = DateTime.now();
       final timeSubmit = now.toIso8601String();
 
+      // final result = await ref
+      //     .read(nfcScanSubmitProvider)
+      //     .call(
+      //       NfcScanSubmitParams(
+      //         checkpointId: tag.uid,
+      //         latitude: position.latitude,
+      //         longitude: position.longitude,
+      //         timeSubmit: timeSubmit,
+      //       ),
+      //     );
+
+      final packageInfo = await PackageInfo.fromPlatform();
+      final credentials = ref.read(credentialsProvider);
+      final buildCode = packageInfo.buildNumber;
+      final deviceName = ref.read(deviceNameProvider);
+      final deviceId = ref.read(deviceIdProvider);
+
       final result = await ref
-          .read(nfcScanSubmitProvider)
+          .read(submitCheckpointProvider)
           .call(
-            NfcScanSubmitParams(
-              checkpointId: tag.uid,
+            SubmitCheckpointParams(
+              type: "NFC",
+              nfcData: NfcData(hex: tag.uid),
               latitude: position.latitude,
               longitude: position.longitude,
-              timeSubmit: timeSubmit,
+              submitTime: timeSubmit,
+              token: credentials ?? "",
+              buildCode: buildCode,
+              deviceName: deviceName ?? "",
+              deviceId: deviceId ?? "",
             ),
           );
 

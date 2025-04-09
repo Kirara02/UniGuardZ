@@ -103,6 +103,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   Future<void> _requestPermissions() async {
     if (Platform.isAndroid) {
       await _checkBluetoothPermission();
+      await _checkBluetoothScanPermission();
+      await _checkBluetoothConnectPermission();
       await _checkBatteryOptimization();
     }
     await _checkLocationPermissions();
@@ -129,6 +131,65 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             "Bluetooth permission: Bluetooth beacon scanning requires permission.",
         onFix: _requestEnableBluetooth,
       );
+    }
+  }
+
+  Future<void> _checkBluetoothScanPermission() async {
+    final sdkInt = await _getAndroidVersion();
+    if (sdkInt >= 31) {
+      await _showLoadingDialog(
+        context,
+        "Checking Bluetooth Scan Permission...",
+      );
+
+      final status = await Permission.bluetoothScan.status;
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+      _isLoadingDialogVisible = false;
+
+      if (!status.isGranted) {
+        await _showPermissionDialog(
+          message:
+              "Bluetooth Scan permission: Required for scanning nearby Bluetooth devices.",
+          onFix: () async {
+            if (status.isPermanentlyDenied) {
+              await openAppSettings();
+            } else {
+              await Permission.bluetoothConnect.request();
+              await Permission.bluetoothScan.request();
+            }
+          },
+        );
+      }
+    }
+  }
+
+  Future<void> _checkBluetoothConnectPermission() async {
+    final sdkInt = await _getAndroidVersion();
+    if (sdkInt >= 31) {
+      await _showLoadingDialog(
+        context,
+        "Checking Bluetooth Connect Permission...",
+      );
+
+      final status = await Permission.bluetoothConnect.status;
+      if (mounted) Navigator.of(context).pop();
+      _isLoadingDialogVisible = false;
+
+      if (!status.isGranted) {
+        await _showPermissionDialog(
+          message:
+              "Bluetooth Connect permission: Required to connect and read device information (like name).",
+          onFix: () async {
+            if (status.isPermanentlyDenied) {
+              await openAppSettings();
+            } else {
+              await Permission.bluetoothConnect.request();
+            }
+          },
+        );
+      }
     }
   }
 
