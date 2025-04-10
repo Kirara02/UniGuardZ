@@ -23,7 +23,7 @@ abstract class FormSubmitModel with _$FormSubmitModel {
     @JsonKey(name: "event_time") required String eventTime,
     @JsonKey(name: "branch_id") String? branchId,
     @JsonKey(name: "branch_name") String? branchName,
-    @JsonKey(name: "device_id") String? deviceId,
+    @JsonKey(name: "device_id") int? deviceId,
     @JsonKey(name: "device_name") String? deviceName,
     @JsonKey(name: "id") required String id,
   }) = _FormSubmitModel;

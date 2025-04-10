@@ -109,9 +109,11 @@ class _HistoryUploadedSectionState
 
                   return ListItem(
                     title: historyItem.referenceName,
-                    subtitle: DateFormat(
-                      'dd MMM yyyy, hh:mm a',
-                    ).format(DateTime.parse(historyItem.originalSubmittedTime)),
+                    subtitle: DateFormat('dd MMM yyyy, hh:mm a').format(
+                      DateTime.parse(
+                        historyItem.originalSubmittedTime,
+                      ).toLocal(),
+                    ),
                     prefixIconPath: iconPath,
                     suffix: InkWell(
                       onTap:

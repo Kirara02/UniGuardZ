@@ -27,7 +27,7 @@ abstract class TaskSubmitModel with _$TaskSubmitModel {
     @JsonKey(name: 'original_submitted_time')
     required String originalSubmittedTime,
     @JsonKey(name: 'event_time') required String eventTime,
-    @JsonKey(name: 'device_id') String? deviceId,
+    @JsonKey(name: 'device_id') int? deviceId,
     @JsonKey(name: 'device_name') String? deviceName,
     @JsonKey(name: 'id') required String id,
   }) = _TaskSubmitModel;
