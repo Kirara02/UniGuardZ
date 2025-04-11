@@ -9,12 +9,14 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:ugz_app/src/constants/enum.dart';
 import 'package:ugz_app/src/constants/gen/assets.gen.dart';
 import 'package:ugz_app/src/features/history/domain/model/payload_data_activity_model.dart';
+import 'package:ugz_app/src/features/history/domain/model/payload_data_alarm_model.dart';
+import 'package:ugz_app/src/features/history/domain/model/payload_data_checkpoint_model.dart';
 import 'package:ugz_app/src/features/history/domain/model/payload_data_form_model.dart';
 import 'package:ugz_app/src/features/history/domain/model/payload_data_task_model.dart';
+import 'package:ugz_app/src/features/history/domain/model/payload_data_user_model.dart';
 import 'package:ugz_app/src/features/history/presentation/history_detail/controller/history_detail_controller.dart';
 import 'package:ugz_app/src/utils/extensions/custom_extensions.dart';
 import 'package:intl/intl.dart';
-import 'package:ugz_app/src/utils/misc/print.dart';
 
 class HistoryDetailScreen extends ConsumerStatefulWidget {
   final String historyId;
@@ -35,6 +37,8 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
       Completer<GoogleMapController>();
 
   String? _mapStyle;
+
+  Map<String, dynamic>? logData;
 
   static const CameraPosition _initialCameraPosition = CameraPosition(
     target: LatLng(-6.2088, 106.8456), // Default to Jakarta
@@ -64,66 +68,54 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
   }
 
   Future<void> _initializeLocation(Map<String, dynamic> data) async {
+    Map<String, dynamic>? locationData;
+
     if (widget.historyType == HistoryType.pending) {
-      printIfDebug(data);
-      if (data['latitude'] != null && data['longitude'] != null) {
-        final lat = data['latitude'] as double;
-        final long = data['longitude'] as double;
-
-        setState(() {
-          _coordinate = LatLng(lat, long);
-          _markers = {
-            Marker(
-              markerId: const MarkerId("dataMarker"),
-              position: _coordinate!,
-              infoWindow: const InfoWindow(title: "Location"),
-            ),
-          };
-        });
-
-        if (_coordinate != null) {
-          await _moveCameraToLocation(_coordinate!);
-        }
-      }
+      locationData = {
+        'latitude': data['latitude'],
+        'longitude': data['longitude'],
+      };
     } else {
-      final payloadData = data['payload_data'] as Map<String, dynamic>;
-      final type = payloadData['type'] as String;
+      final payload = data['payload_data'] as Map<String, dynamic>?;
+      final type = (payload?['type'] as String?)?.toLowerCase();
 
-      Map<String, dynamic>? locationData;
+      final locationMap = {
+        'form': 'logForm',
+        'task': 'logTask',
+        'activity': 'logActivity',
+        'user': 'userUserDevice',
+        'checkpoint': 'logCheckpoint',
+        'alarm': 'alarm',
+      };
 
-      // Get location data based on type
-      switch (type.toLowerCase()) {
-        case 'form':
-          locationData = payloadData['logForm'] as Map<String, dynamic>?;
-        case 'task':
-          locationData = payloadData['logTask'] as Map<String, dynamic>?;
-        case 'activity':
-          locationData = payloadData['logActivity'] as Map<String, dynamic>?;
-        default:
-          locationData = null;
-      }
+      locationData = payload?[locationMap[type]] as Map<String, dynamic>?;
+    }
 
-      if (locationData != null &&
-          locationData['latitude'] != null &&
-          locationData['longitude'] != null) {
-        final lat = locationData['latitude'] as double;
-        final long = locationData['longitude'] as double;
+    if (locationData == null) return;
 
-        setState(() {
-          _coordinate = LatLng(lat, long);
-          _markers = {
-            Marker(
-              markerId: const MarkerId("dataMarker"),
-              position: _coordinate!,
-              infoWindow: const InfoWindow(title: "Location"),
-            ),
-          };
-        });
+    final lat =
+        locationData['end_latitude'] ??
+        locationData['start_latitude'] ??
+        locationData['latitude'];
+    final long =
+        locationData['end_longitude'] ??
+        locationData['start_longitude'] ??
+        locationData['longitude'];
 
-        if (_coordinate != null) {
-          await _moveCameraToLocation(_coordinate!);
-        }
-      }
+    if (lat != null && long != null) {
+      _coordinate = LatLng(lat as double, long as double);
+
+      setState(() {
+        _markers = {
+          Marker(
+            markerId: const MarkerId("dataMarker"),
+            position: _coordinate!,
+            infoWindow: const InfoWindow(title: "Location"),
+          ),
+        };
+      });
+
+      await _moveCameraToLocation(_coordinate!);
     }
   }
 
@@ -163,6 +155,9 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
       historyDetailControllerProvider(widget.historyId, widget.historyType),
       (previous, next) {
         if (next.data != null) {
+          setState(() {
+            logData = next.data;
+          });
           _initializeLocation(next.data!);
         }
         if (next.error != null) {
@@ -180,17 +175,35 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
                 children: [
                   Expanded(
                     flex: 1,
-                    child: GoogleMap(
-                      mapType: MapType.normal,
-                      initialCameraPosition: _initialCameraPosition,
-                      markers: _markers,
-                      zoomControlsEnabled: false,
-                      style: _mapStyle,
-                      onMapCreated: (GoogleMapController controller) async {
-                        _controller.complete(controller);
-                      },
+                    child: Stack(
+                      children: [
+                        GoogleMap(
+                          mapType: MapType.normal,
+                          initialCameraPosition: _initialCameraPosition,
+                          markers: _markers,
+                          zoomControlsEnabled: false,
+                          style: _mapStyle,
+                          onMapCreated: (GoogleMapController controller) {
+                            _controller.complete(controller);
+                          },
+                        ),
+                        if (_coordinate == null)
+                          Container(
+                            color: Colors.black.withOpacity(0.5),
+                            alignment: Alignment.center,
+                            child: const Text(
+                              "Lokasi tidak tersedia",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
+
                   if (state.data != null) ...[
                     Expanded(
                       flex: 2,
@@ -248,7 +261,7 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              "Submitted Time: ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(logForm.originalSubmittedTime))}",
+              "Submitted Time: ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(logForm.originalSubmittedTime).toLocal())}",
             ),
             const SizedBox(height: 16),
             Text(
@@ -323,7 +336,7 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              "Submitted Time: ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(logTask.originalSubmittedTime))}",
+              "Submitted Time: ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(logTask.originalSubmittedTime).toLocal())}",
             ),
             const SizedBox(height: 16),
             Text(
@@ -397,7 +410,7 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              "Submitted Time: ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(logActivity.originalSubmittedTime))}",
+              "Submitted Time: ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(logActivity.originalSubmittedTime).toLocal())}",
             ),
             const SizedBox(height: 8),
             if (logActivity.comment != null) ...[
@@ -416,6 +429,76 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
                         const Text('Failed to load image'),
               ),
             ],
+          ],
+        );
+      case "user":
+        final logUser = PayloadDataUserModel.fromJson(payloadData).logUser;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "History Type: ${logData?['alert_event_name']}",
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Device Name: ${logUser.deviceName}",
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Time: ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(logUser.eventTime).toLocal())}",
+            ),
+          ],
+        );
+
+      case "checkpoint":
+        final logChekpoint =
+            PayloadDataCheckpointModel.fromJson(payloadData).logChekpoint;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Checkpoint Name: ${logChekpoint.checkpointName}",
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Device Name: ${logChekpoint.deviceName}",
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Time: ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(logChekpoint.originalSubmittedTime).toLocal())}",
+            ),
+          ],
+        );
+
+      case "alarm":
+        final logAlarm = PayloadDataAlarmModel.fromJson(payloadData).alarm;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "History Type: ${logData?['alert_event_name']}",
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Device Name: ${logAlarm.deviceName}",
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Start Datetime: ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(logAlarm.startDateTime!).toLocal())}",
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "End Datetime: ${logAlarm.endDateTime != null ? DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(logAlarm.endDateTime!).toLocal()) : "-"}",
+            ),
           ],
         );
 

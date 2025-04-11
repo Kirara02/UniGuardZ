@@ -60,11 +60,11 @@ class CheckpointRepositoryImpl implements CheckpointRepository {
       "original_submitted_time": params.submitTime,
     };
 
-    if (params.type == "Beacon" && params.beaconData != null) {
+    if (params.type == "beacon" && params.beaconData != null) {
       data["beacon"] = params.beaconData!.toJson();
     }
 
-    if (params.type == "NFC" && params.nfcData != null) {
+    if (params.type == "nfc" && params.nfcData != null) {
       data["nfc"] = params.nfcData!.toJson();
     }
 

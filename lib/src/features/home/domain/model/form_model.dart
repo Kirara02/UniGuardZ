@@ -1,9 +1,7 @@
-
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../widgets/interface/base_field.dart';
 import 'field_model.dart';
-
 
 part 'form_model.freezed.dart';
 part 'form_model.g.dart';
@@ -12,9 +10,6 @@ part 'form_model.g.dart';
 abstract class FormModel with _$FormModel {
   const factory FormModel({
     @JsonKey(name: "id") required String id,
-    @JsonKey(name: "parent_branch_id")  String? parentBranchId,
-    @JsonKey(name: "role_id") String? roleId,
-    @JsonKey(name: "checkpoint_id") String? checkpointId,
     @JsonKey(name: "form_name") required String formName,
     @JsonKey(name: "form_description") required String formDescription,
     @JsonKey(name: "active") required bool active,

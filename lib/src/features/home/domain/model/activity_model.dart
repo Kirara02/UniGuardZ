@@ -7,8 +7,6 @@ part 'activity_model.g.dart';
 abstract class ActivityModel with _$ActivityModel {
   const factory ActivityModel({
     @JsonKey(name: "id") required String id,
-    @JsonKey(name: "branch_id") required String branchId,
-    @JsonKey(name: "parent_branch_id") required String parentBranchId,
     @JsonKey(name: "activity_name") required String activityName,
     @JsonKey(name: "activity_description") required String activityDescription,
     @JsonKey(name: "gps_required") required bool gpsRequired,

@@ -14,6 +14,6 @@ class SubmitActivityParams {
     this.longitude,
     this.comment,
     this.photo,
-    DateTime? timestamp,
-  }) : timestamp = timestamp ?? DateTime.now();
+    required this.timestamp,
+  });
 }

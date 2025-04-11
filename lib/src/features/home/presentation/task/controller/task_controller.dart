@@ -109,7 +109,7 @@ class TaskController extends _$TaskController {
           fieldTypeId: e.typeId!, // Checkbox
           fieldTypeName: "checkbox",
           taskFieldName: e.inputName!,
-          value: (e.value == "true" || e.value == "1") ? "1" : "0",
+          value: (e.value == "true" || e.value == "1") ? "true" : "false",
         ),
       ),
     );

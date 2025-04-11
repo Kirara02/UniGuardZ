@@ -132,7 +132,7 @@ class ScanController extends _$ScanController {
 
       // Get current time
       final now = DateTime.now();
-      final timeSubmit = now.toIso8601String();
+      final timeSubmit = now.toUtc().toIso8601String();
 
       // final result = await ref
       //     .read(nfcScanSubmitProvider)
@@ -155,7 +155,7 @@ class ScanController extends _$ScanController {
           .read(submitCheckpointProvider)
           .call(
             SubmitCheckpointParams(
-              type: "NFC",
+              type: "nfc",
               nfcData: NfcData(hex: tag.uid),
               latitude: position.latitude,
               longitude: position.longitude,

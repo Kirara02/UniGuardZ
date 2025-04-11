@@ -93,28 +93,50 @@ class _HistoryUploadedSectionState
                   }
 
                   final historyItem = value[index];
-                  String iconPath;
+                  Widget? iconPath;
 
                   // Determine icon based on type
                   switch (historyItem.payloadData['type'].toLowerCase()) {
                     case 'form':
-                      iconPath = Assets.icons.file.path;
+                      iconPath = Assets.icons.file.svg(width: 20, height: 20);
                     case 'task':
-                      iconPath = Assets.icons.checklist.path;
+                      iconPath = Assets.icons.checklist.svg(
+                        width: 20,
+                        height: 20,
+                      );
                     case 'activity':
-                      iconPath = Assets.icons.guard.path;
+                      iconPath = Assets.icons.guard.svg(width: 20, height: 20);
+                    case 'user':
+                      iconPath =
+                          iconPath = Icon(
+                            Icons.person_outline_rounded,
+                            color: Colors.blue,
+                          );
+                    case 'alarm':
+                      iconPath = Icon(
+                        Icons.warning_amber_rounded,
+                        color: Colors.blue,
+                      );
+                    case 'checkpoint':
+                      iconPath = Icon(Icons.wifi_tethering, color: Colors.blue);
                     default:
-                      iconPath = Assets.icons.pinLocation.path;
+                      iconPath = Assets.icons.pinLocation.svg(
+                        width: 20,
+                        height: 20,
+                      );
                   }
 
                   return ListItem(
-                    title: historyItem.referenceName,
+                    title:
+                        historyItem.payloadData['type'] != 'alarm'
+                            ? historyItem.referenceName
+                            : historyItem.alertEventName,
                     subtitle: DateFormat('dd MMM yyyy, hh:mm a').format(
                       DateTime.parse(
                         historyItem.originalSubmittedTime,
                       ).toLocal(),
                     ),
-                    prefixIconPath: iconPath,
+                    prefix: iconPath,
                     suffix: InkWell(
                       onTap:
                           () => HistoryDetailRoute(

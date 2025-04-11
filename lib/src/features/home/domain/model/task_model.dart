@@ -10,11 +10,6 @@ part 'task_model.g.dart';
 abstract class TaskModel with _$TaskModel {
   const factory TaskModel({
     @JsonKey(name: "id") required String id,
-    @JsonKey(name: "branch_id") required String branchId,
-    @JsonKey(name: "parent_branch_id") required String parentBranchId,
-    @JsonKey(name: "check_point_id") String? checkPointId,
-    @JsonKey(name: "role_id") String? roleId,
-    @JsonKey(name: "user_id") String? userId,
     @JsonKey(name: "task_type") required String taskType,
     @JsonKey(name: "task_name") required String taskName,
     @JsonKey(name: "task_description") required String taskDescription,

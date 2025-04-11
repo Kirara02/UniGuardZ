@@ -307,8 +307,8 @@ class RetryUpload extends _$RetryUpload {
             formFieldName: switchItem['inputName'] ?? "Switch",
             value:
                 (switchItem['value'] == "true" || switchItem['value'] == "1")
-                    ? "1"
-                    : "0",
+                    ? "true"
+                    : "false",
           ),
         );
       }

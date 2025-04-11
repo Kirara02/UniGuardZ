@@ -7,20 +7,22 @@ import 'package:ugz_app/src/constants/colors.dart';
 
 class ListItem extends ConsumerWidget {
   final VoidCallback onPressed;
-  final String prefixIconPath;
+  final String? prefixIconPath;
   final String title;
   final String? subtitle;
-  final ListItemType type;
+  final ListItemType? type;
   final Widget? suffix;
+  final Widget? prefix;
 
   const ListItem({
     super.key,
     required this.title,
-    required this.prefixIconPath,
     required this.onPressed,
     this.type = ListItemType.svg,
     this.subtitle,
     this.suffix,
+    this.prefix,
+    this.prefixIconPath,
   });
 
   @override
@@ -94,16 +96,22 @@ class ListItem extends ConsumerWidget {
   }
 
   Widget _buildIcon() {
-    switch (type) {
-      case ListItemType.svg:
-        return SvgPicture.asset(prefixIconPath, width: 20, height: 20);
-      case ListItemType.png:
-        return Image.asset(
-          prefixIconPath,
-          width: 20,
-          height: 20,
-          fit: BoxFit.contain,
-        );
+    if (prefixIconPath != null && type != null) {
+      switch (type!) {
+        case ListItemType.svg:
+          return SvgPicture.asset(prefixIconPath!, width: 20, height: 20);
+        case ListItemType.png:
+          return Image.asset(
+            prefixIconPath!,
+            width: 20,
+            height: 20,
+            fit: BoxFit.contain,
+          );
+      }
+    } else if (prefix != null) {
+      return prefix!;
+    } else {
+      return SizedBox();
     }
   }
 }

@@ -82,10 +82,6 @@
             android:theme="@style/Ucrop.CropTheme"/>
 
         <service
-            android:name="com.almoullim.background_location.LocationUpdatesService"
-            android:foregroundServiceType="location" />
-
-        <service
             android:name="id.flutter.flutter_background_service.BackgroundService"
             android:foregroundServiceType="location"
             android:permission="android.permission.FOREGROUND_SERVICE_LOCATION" />

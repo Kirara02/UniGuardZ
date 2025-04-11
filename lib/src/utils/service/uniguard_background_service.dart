@@ -27,7 +27,9 @@ void onStart(ServiceInstance service) async {
   DartPluginRegistrant.ensureInitialized();
   final notifications = FlutterLocalNotificationsPlugin();
 
-  service.on('setUserData').listen((event) {
+  service.on('setUserData').listen((event) async {
+    await Future.delayed(Duration(seconds: 5));
+
     backgroundServiceInstance._startBeaconMonitoring(notifications);
 
     final gpsTrackingEnabled = event?['gpsTrackingEnabled'] ?? false;
@@ -45,10 +47,12 @@ void onStart(ServiceInstance service) async {
   });
 
   if (service is AndroidServiceInstance) {
-    service.setForegroundNotificationInfo(
+    await service.setForegroundNotificationInfo(
       title: "Background Service",
       content: "UniGuard Background Service",
     );
+
+    await Future.delayed(Duration(seconds: 2));
   }
 
   service.on('stopService').listen((event) {
@@ -177,7 +181,6 @@ class UniguardBackgroundService {
   }
 
   Future<void> stopService() async {
-    print("stopService");
     bool isRunning = await _service.isRunning();
     if (isRunning) {
       print("running");
@@ -324,19 +327,6 @@ class UniguardBackgroundService {
 
         if (!exists) {
           _beaconResults.add(beacon);
-          notifications.show(
-            889,
-            'Beacon Detected',
-            'UUID: ${beacon.uuid}, Major: ${beacon.major}',
-            const NotificationDetails(
-              android: AndroidNotificationDetails(
-                'ugz_foreground',
-                'UGZ FOREGROUND SERVICE',
-                importance: Importance.low,
-                icon: 'ic_bg_service_small',
-              ),
-            ),
-          );
         }
       } catch (e) {
         print('Beacon decode error: $e');

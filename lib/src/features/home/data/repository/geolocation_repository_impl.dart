@@ -35,7 +35,7 @@ class GeolocationRepositoryImpl implements GeolocationRepository {
       data: {
         "latitude": latitude,
         "longitude": longitude,
-        "original_submitted_time": DateTime.now().toIso8601String(),
+        "original_submitted_time": DateTime.now().toUtc().toIso8601String(),
       },
       converter: (json) => GeolocationModel.fromJson(json),
     );

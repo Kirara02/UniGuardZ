@@ -30,7 +30,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
   void initState() {
     super.initState();
     WidgetsFlutterBinding.ensureInitialized().addPostFrameCallback((_) {
-      ref.read(uniguardServiceProvider.notifier).startService();
+      // ref.read(uniguardServiceProvider.notifier).startService();
     });
   }
 
@@ -48,7 +48,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
         // Stop background service when logging out
 
         // ref.read(geolocationServiceProvider.notifier).stopTracking();
-        ref.read(uniguardServiceProvider.notifier).stopService();
+        // ref.read(uniguardServiceProvider.notifier).stopService();
 
         LoginRoute().go(context);
       } else if (next is AsyncError) {
