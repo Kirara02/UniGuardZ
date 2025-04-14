@@ -165,7 +165,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               children:
                   menuItems.map((item) {
                     return GestureDetector(
-                      onTap: item.isAlarmTap == false ? item.onPressed : null,
+                      onTap:
+                          item.isAlarmTap == false
+                              ? item.onPressed
+                              : () {
+                                context.showSnackBar(
+                                  "Long press to start/stop alarm",
+                                );
+                              },
                       onLongPress:
                           item.isAlarmTap == true
                               ? () async {

@@ -259,4 +259,8 @@ class TaskController extends _$TaskController {
       return false;
     }
   }
+
+  void setSubmitting(bool isSubmitting) {
+    state = state.copyWith(isSubmitting: isSubmitting);
+  }
 }

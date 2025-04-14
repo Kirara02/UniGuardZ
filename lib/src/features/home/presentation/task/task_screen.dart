@@ -212,8 +212,16 @@ class _TaskScreenState extends ConsumerState<TaskScreen>
         return;
       }
 
+      // Set loading state before starting any process
+      ref
+          .read(taskControllerProvider(widget.taskId).notifier)
+          .setSubmitting(true);
+
       final locationStatus = await _validateLocation();
       if (locationStatus != LocationStatus.granted) {
+        ref
+            .read(taskControllerProvider(widget.taskId).notifier)
+            .setSubmitting(false);
         return;
       }
 
@@ -233,6 +241,9 @@ class _TaskScreenState extends ConsumerState<TaskScreen>
           );
     } catch (e) {
       context.showSnackBar("Error: $e");
+      ref
+          .read(taskControllerProvider(widget.taskId).notifier)
+          .setSubmitting(false);
     }
   }
 

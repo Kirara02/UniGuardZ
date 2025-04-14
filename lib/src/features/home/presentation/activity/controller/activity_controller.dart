@@ -170,4 +170,8 @@ class ActivityController extends _$ActivityController {
     final insert = ref.read(dbInsertPendingActivityProvider);
     await insert(params);
   }
+
+  void setSubmitting(bool isSubmitting) {
+    state = state.copyWith(isSubmitting: isSubmitting);
+  }
 }

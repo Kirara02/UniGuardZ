@@ -199,21 +199,35 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
         return;
       }
 
+      // Set loading state before starting any process
+      ref
+          .read(activityControllerProvider(widget.activityId).notifier)
+          .setSubmitting(true);
+
       // Validate required fields
       if (activity.commentRequired &&
           (commentValue == null || commentValue!.isEmpty)) {
         context.showSnackBar("Comment is required");
+        ref
+            .read(activityControllerProvider(widget.activityId).notifier)
+            .setSubmitting(false);
         return;
       }
 
       if (activity.photoRequired && photoPath == null) {
         context.showSnackBar("Photo is required");
+        ref
+            .read(activityControllerProvider(widget.activityId).notifier)
+            .setSubmitting(false);
         return;
       }
 
       if (activity.gpsRequired) {
         final locationStatus = await _validateLocation();
         if (locationStatus != LocationStatus.granted) {
+          ref
+              .read(activityControllerProvider(widget.activityId).notifier)
+              .setSubmitting(false);
           return;
         }
       }
@@ -257,6 +271,9 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
           );
     } catch (e) {
       context.showSnackBar("Error: $e");
+      ref
+          .read(activityControllerProvider(widget.activityId).notifier)
+          .setSubmitting(false);
     }
   }
 }

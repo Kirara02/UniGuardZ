@@ -7,7 +7,7 @@ import 'package:ugz_app/src/constants/colors.dart';
 import 'package:ugz_app/src/constants/gen/assets.gen.dart';
 import 'package:ugz_app/src/features/auth/providers/user_data_provider.dart';
 import 'package:ugz_app/src/global_providers/pending_count_providers.dart';
-import 'package:ugz_app/src/global_providers/uniguard_background_service.dart';
+// import 'package:ugz_app/src/global_providers/uniguard_background_service.dart';
 import 'package:ugz_app/src/local/usecases/delete_all_pending_forms/delete_all_pending_forms.dart';
 import 'package:ugz_app/src/routes/router_config.dart';
 import 'package:ugz_app/src/utils/extensions/custom_extensions.dart';

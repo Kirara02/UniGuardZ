@@ -213,12 +213,20 @@ class _FormScreenState extends ConsumerState<FormScreen>
         return;
       }
 
+      // Set loading state before starting any process
+      ref
+          .read(formControllerProvider(widget.formId).notifier)
+          .setSubmitting(true);
+
       // Validate required fields
       for (var field in form.fields) {
         if (field.formFieldRequire &&
             (formValues[field.id] == null ||
                 formValues[field.id].toString().isEmpty)) {
           context.showSnackBar('Field ${field.formFieldName} is required');
+          ref
+              .read(formControllerProvider(widget.formId).notifier)
+              .setSubmitting(false);
           return;
         }
       }
@@ -229,6 +237,9 @@ class _FormScreenState extends ConsumerState<FormScreen>
             field.formFieldRequire &&
             formValues[field.id] == null) {
           context.showSnackBar('Photo ${field.formFieldName} is required');
+          ref
+              .read(formControllerProvider(widget.formId).notifier)
+              .setSubmitting(false);
           return;
         }
       }
@@ -239,12 +250,18 @@ class _FormScreenState extends ConsumerState<FormScreen>
             field.formFieldRequire &&
             formValues[field.id] == null) {
           context.showSnackBar('Signature ${field.formFieldName} is required');
+          ref
+              .read(formControllerProvider(widget.formId).notifier)
+              .setSubmitting(false);
           return;
         }
       }
 
       final locationStatus = await _validateLocation();
       if (locationStatus != LocationStatus.granted) {
+        ref
+            .read(formControllerProvider(widget.formId).notifier)
+            .setSubmitting(false);
         return;
       }
 
@@ -264,6 +281,9 @@ class _FormScreenState extends ConsumerState<FormScreen>
           );
     } catch (e) {
       context.showSnackBar("Error: $e");
+      ref
+          .read(formControllerProvider(widget.formId).notifier)
+          .setSubmitting(false);
     }
   }
 

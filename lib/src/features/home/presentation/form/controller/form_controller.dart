@@ -268,4 +268,8 @@ class FormController extends _$FormController {
       return false;
     }
   }
+
+  void setSubmitting(bool isSubmitting) {
+    state = state.copyWith(isSubmitting: isSubmitting);
+  }
 }
