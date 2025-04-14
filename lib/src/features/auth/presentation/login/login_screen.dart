@@ -526,8 +526,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 ref
                                     .read(userDataProvider.notifier)
                                     .login(
-                                      email: _emailController.text,
-                                      password: _passwordController.text,
+                                      email: _emailController.text.trim(),
+                                      password: _passwordController.text.trim(),
                                     );
                               }
                             },

@@ -167,7 +167,11 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   }
 
   Future<LocationStatus> _validateLocation() async {
+    // Refresh trigger untuk memaksa provider re-run
+    ref.read(locationTriggerProvider.notifier).state++;
+
     final locationData = await ref.read(locationProvider.future);
+
     if (mounted) {
       switch (locationData.status) {
         case LocationStatus.serviceDisabled:
@@ -185,6 +189,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
           return LocationStatus.granted;
       }
     }
+
     return LocationStatus.unknown;
   }
 

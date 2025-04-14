@@ -184,23 +184,30 @@ class _FormScreenState extends ConsumerState<FormScreen>
   }
 
   Future<LocationStatus> _validateLocation() async {
+    // Refresh trigger untuk memaksa provider re-run
+    ref.read(locationTriggerProvider.notifier).state++;
+
     final locationData = await ref.read(locationProvider.future);
 
-    switch (locationData.status) {
-      case LocationStatus.serviceDisabled:
-        context.showSnackBar("GPS is not active");
-        return LocationStatus.serviceDisabled;
-      case LocationStatus.denied:
-        context.showSnackBar("Location permission denied");
-        return LocationStatus.denied;
-      case LocationStatus.unknown:
-        context.showSnackBar("Failed to get location");
-        return LocationStatus.unknown;
-      case LocationStatus.granted:
-        latitude = locationData.position?.latitude;
-        longitude = locationData.position?.longitude;
-        return LocationStatus.granted;
+    if (mounted) {
+      switch (locationData.status) {
+        case LocationStatus.serviceDisabled:
+          context.showSnackBar("GPS is not active");
+          return LocationStatus.serviceDisabled;
+        case LocationStatus.denied:
+          context.showSnackBar("Location permission denied");
+          return LocationStatus.denied;
+        case LocationStatus.unknown:
+          context.showSnackBar("Failed to get location");
+          return LocationStatus.unknown;
+        case LocationStatus.granted:
+          latitude = locationData.position?.latitude;
+          longitude = locationData.position?.longitude;
+          return LocationStatus.granted;
+      }
     }
+
+    return LocationStatus.unknown;
   }
 
   void _submitForm() async {
