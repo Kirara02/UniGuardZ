@@ -26,5 +26,5 @@ class GetActivities implements UseCase<Result<List<ActivityModel>>, void> {
 }
 
 @riverpod
-GetActivities getActivities(GetActivitiesRef ref) =>
+GetActivities getActivities(ref) =>
     GetActivities(formsRepository: ref.watch(formsRepositoryProvider));

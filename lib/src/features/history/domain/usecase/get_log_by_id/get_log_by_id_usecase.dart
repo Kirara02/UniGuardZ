@@ -26,5 +26,5 @@ class GetLogById implements UseCase<Result<LogAlertModel>, String> {
 }
 
 @riverpod
-GetLogById getLogById(GetLogByIdRef ref) =>
+GetLogById getLogById(ref) =>
     GetLogById(alertLogRepository: ref.watch(alertLogRepositoryProvider));

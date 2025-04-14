@@ -54,5 +54,5 @@ class SubmitActivity implements UseCase<Result<String>, SubmitActivityParams> {
 }
 
 @riverpod
-SubmitActivity submitActivity(SubmitActivityRef ref) =>
+SubmitActivity submitActivity(ref) =>
     SubmitActivity(formsRepository: ref.watch(formsRepositoryProvider));

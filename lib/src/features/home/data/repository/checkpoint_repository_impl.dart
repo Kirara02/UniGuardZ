@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:ugz_app/src/features/home/data/interface/checkpoint_repository.dart';
-import 'package:ugz_app/src/features/home/domain/model/beacon_model.dart';
+import 'package:ugz_app/src/features/home/domain/model/checkpoint_model.dart';
 import 'package:ugz_app/src/features/home/domain/model/scan_nfc_submit_model.dart';
 import 'package:ugz_app/src/features/home/domain/usecase/submit_checkpoint/submit_checkpoint_params.dart';
 import 'package:ugz_app/src/global_providers/global_providers.dart';
@@ -84,23 +84,26 @@ class CheckpointRepositoryImpl implements CheckpointRepository {
   }
 
   @override
-  Future<ApiResponse<List<BeaconModel>>> getBeacons({
+  Future<ApiResponse<List<CheckpointModel>>> getCheckpoints({
+    required int checkpointType,
     required String token,
     required String buildCode,
     required String deviceName,
     required String deviceId,
   }) async {
-    return await _dioClient.getApiListResponse<BeaconModel>(
-      "mobile-api/admin/beacon",
+    return await _dioClient.getApiListResponse<CheckpointModel>(
+      "mobile-api/admin/checkpoint",
       options: Options(
         headers: {
           "Authorization": "Bearer $token",
           "x-app-build": buildCode,
           'x-device-name': deviceName,
           'x-device-uid': deviceId,
+          'checkpoint_type_id':
+              checkpointType, // 1 = BEACONS, 2 = NFC, 3 = RFID, 4 = GEOFENCE
         },
       ),
-      itemConverter: (json) => BeaconModel.fromJson(json),
+      itemConverter: (json) => CheckpointModel.fromJson(json),
     );
   }
 }

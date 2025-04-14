@@ -30,5 +30,5 @@ class StartAlarm implements UseCase<Result<AlarmModel>, StartAlarmParams> {
 }
 
 @riverpod
-StartAlarm startAlarm(StartAlarmRef ref) =>
+StartAlarm startAlarm(ref) =>
     StartAlarm(alarmRepository: ref.watch(alarmRepositoryProvider));

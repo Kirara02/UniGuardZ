@@ -25,5 +25,5 @@ class GetUser implements UseCase<Result<User>, void> {
 }
 
 @riverpod
-GetUser getUser(GetUserRef ref) =>
+GetUser getUser(ref) =>
     GetUser(authRepository: ref.watch(authRepositoryProvider));

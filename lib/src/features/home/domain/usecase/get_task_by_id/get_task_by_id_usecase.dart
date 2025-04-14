@@ -1,4 +1,3 @@
-
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:ugz_app/src/features/home/data/interface/forms_repository.dart';
 import 'package:ugz_app/src/features/home/data/repository/forms_repository_impl.dart';
@@ -26,5 +25,5 @@ class GetTaskById implements UseCase<Result<TaskModel>, String> {
 }
 
 @riverpod
-GetTaskById getTaskById(GetTaskByIdRef ref) =>
+GetTaskById getTaskById(ref) =>
     GetTaskById(formsRepository: ref.watch(formsRepositoryProvider));

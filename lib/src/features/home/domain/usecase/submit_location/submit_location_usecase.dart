@@ -1,4 +1,3 @@
-
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:ugz_app/src/features/home/data/interface/geolocation_repository.dart';
 import 'package:ugz_app/src/features/home/data/repository/geolocation_repository_impl.dart';
@@ -11,7 +10,7 @@ class SubmitLocation implements UseCase<String, SubmitLocationParams> {
   final GeolocationRepository _geolocationRepository;
 
   SubmitLocation({required GeolocationRepository geolocationRepository})
-      : _geolocationRepository = geolocationRepository;
+    : _geolocationRepository = geolocationRepository;
 
   @override
   Future<String> call(SubmitLocationParams params) async {
@@ -21,7 +20,7 @@ class SubmitLocation implements UseCase<String, SubmitLocationParams> {
       token: params.token,
       buildCode: params.buildCode,
       deviceName: params.deviceName,
-      deviceId: params.deviceId
+      deviceId: params.deviceId,
     );
 
     return response.message;
@@ -29,5 +28,6 @@ class SubmitLocation implements UseCase<String, SubmitLocationParams> {
 }
 
 @riverpod
-SubmitLocation submitLocation(SubmitLocationRef ref) =>
-    SubmitLocation(geolocationRepository: ref.watch(geolocationRepositoryProvider));
+SubmitLocation submitLocation(ref) => SubmitLocation(
+  geolocationRepository: ref.watch(geolocationRepositoryProvider),
+);

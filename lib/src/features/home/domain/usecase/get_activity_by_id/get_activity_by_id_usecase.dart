@@ -25,5 +25,5 @@ class GetActivityById implements UseCase<Result<ActivityModel>, String> {
 }
 
 @riverpod
-GetActivityById getActivityById(GetActivityByIdRef ref) =>
+GetActivityById getActivityById(ref) =>
     GetActivityById(formsRepository: ref.watch(formsRepositoryProvider));

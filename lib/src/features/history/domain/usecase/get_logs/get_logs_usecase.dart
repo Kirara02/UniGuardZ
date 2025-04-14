@@ -32,5 +32,5 @@ class GetLogs implements UseCase<Result<List<LogAlertModel>>, GetLogsParams> {
 }
 
 @riverpod
-GetLogs getLogs(GetLogsRef ref) =>
+GetLogs getLogs(ref) =>
     GetLogs(alertLogRepository: ref.watch(alertLogRepositoryProvider));

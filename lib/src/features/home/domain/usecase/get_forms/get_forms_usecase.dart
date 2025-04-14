@@ -26,5 +26,5 @@ class GetForms implements UseCase<Result<List<FormModel>>, void> {
 }
 
 @riverpod
-GetForms getForms(GetFormsRef ref) =>
+GetForms getForms(ref) =>
     GetForms(formsRepository: ref.watch(formsRepositoryProvider));

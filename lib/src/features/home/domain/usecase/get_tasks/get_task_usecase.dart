@@ -26,5 +26,5 @@ class GetTasks implements UseCase<Result<List<TaskModel>>, void> {
 }
 
 @riverpod
-GetTasks getTasks(GetTasksRef ref) =>
+GetTasks getTasks(ref) =>
     GetTasks(formsRepository: ref.watch(formsRepositoryProvider));

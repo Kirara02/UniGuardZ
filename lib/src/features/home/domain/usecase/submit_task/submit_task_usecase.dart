@@ -48,5 +48,5 @@ class SubmitTask implements UseCase<Result<String>, SubmitTaskParams> {
 }
 
 @riverpod
-SubmitTask submitTask(SubmitTaskRef ref) =>
+SubmitTask submitTask(ref) =>
     SubmitTask(formsRepository: ref.watch(formsRepositoryProvider));

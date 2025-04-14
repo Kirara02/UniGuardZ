@@ -47,5 +47,5 @@ class AlarmRepositoryImpl implements AlarmRepository {
 }
 
 @riverpod
-AlarmRepository alarmRepository(AlarmRepositoryRef ref) =>
+AlarmRepository alarmRepository(ref) =>
     AlarmRepositoryImpl(dioClient: ref.watch(dioClientKeyProvider));

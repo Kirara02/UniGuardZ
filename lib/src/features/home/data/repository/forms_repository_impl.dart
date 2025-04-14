@@ -111,5 +111,5 @@ class FormsRepositoryImpl implements FormsRepository {
 }
 
 @riverpod
-FormsRepository formsRepository(FormsRepositoryRef ref) =>
+FormsRepository formsRepository(ref) =>
     FormsRepositoryImpl(dioClient: ref.watch(dioClientKeyProvider));

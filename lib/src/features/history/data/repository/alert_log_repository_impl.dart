@@ -51,5 +51,5 @@ class AlertLogRepositoryImpl implements AlertLogRepository {
 }
 
 @riverpod
-AlertLogRepository alertLogRepository(AlertLogRepositoryRef ref) =>
+AlertLogRepository alertLogRepository(ref) =>
     AlertLogRepositoryImpl(dioClient: ref.watch(dioClientKeyProvider));

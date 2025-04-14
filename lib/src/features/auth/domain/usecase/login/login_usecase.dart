@@ -32,5 +32,4 @@ class Login implements UseCase<Result<LoginResponse>, LoginParams> {
 }
 
 @riverpod
-Login login(LoginRef ref) =>
-    Login(authRepository: ref.watch(authRepositoryProvider));
+Login login(ref) => Login(authRepository: ref.watch(authRepositoryProvider));

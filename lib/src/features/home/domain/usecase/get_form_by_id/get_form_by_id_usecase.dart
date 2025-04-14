@@ -25,5 +25,5 @@ class GetFormById implements UseCase<Result<FormModel>, String> {
 }
 
 @riverpod
-GetFormById getFormById(GetFormByIdRef ref) =>
+GetFormById getFormById(ref) =>
     GetFormById(formsRepository: ref.watch(formsRepositoryProvider));

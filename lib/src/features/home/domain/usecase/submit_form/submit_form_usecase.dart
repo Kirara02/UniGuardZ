@@ -48,5 +48,5 @@ class SubmitForm implements UseCase<Result<String>, SubmitFormParams> {
 }
 
 @riverpod
-SubmitForm submitForm(SubmitFormRef ref) =>
+SubmitForm submitForm(ref) =>
     SubmitForm(formsRepository: ref.watch(formsRepositoryProvider));

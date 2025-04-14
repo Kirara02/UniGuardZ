@@ -31,5 +31,5 @@ class StopAlarm implements UseCase<Result<AlarmModel>, StopAlarmParams> {
 }
 
 @riverpod
-StopAlarm stopAlarm(StopAlarmRef ref) =>
+StopAlarm stopAlarm(ref) =>
     StopAlarm(alarmRepository: ref.watch(alarmRepositoryProvider));

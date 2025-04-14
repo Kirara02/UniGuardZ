@@ -43,7 +43,6 @@ class GeolocationRepositoryImpl implements GeolocationRepository {
 }
 
 @riverpod
-GeolocationRepository geolocationRepository(GeolocationRepositoryRef ref) =>
-    GeolocationRepositoryImpl(
-      dioClient: ref.watch(backgroundDioClientKeyProvider),
-    );
+GeolocationRepository geolocationRepository(ref) => GeolocationRepositoryImpl(
+  dioClient: ref.watch(backgroundDioClientKeyProvider),
+);

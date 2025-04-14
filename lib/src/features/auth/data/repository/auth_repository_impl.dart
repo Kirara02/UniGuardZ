@@ -38,5 +38,5 @@ class AuthRepositoryImpl implements AuthRepository {
 }
 
 @riverpod
-AuthRepository authRepository(AuthRepositoryRef ref) =>
+AuthRepository authRepository(ref) =>
     AuthRepositoryImpl(dioClient: ref.watch(dioClientKeyProvider));
