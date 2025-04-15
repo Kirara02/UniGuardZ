@@ -1,7 +1,7 @@
 name: ugz_app
 description: "A new Flutter project."
 publish_to: "none"
-version: 0.1.0+7
+version: 0.1.1+9
 
 environment:
   sdk: ^3.7.0
@@ -9,10 +9,10 @@ environment:
 dependencies:
   app_settings: ^5.1.1
   badges: ^3.1.2
-  beacons_plugin:
-    git:
-      url: https://github.com/Kirara02/simple_beacons_flutter.git
-      ref: master
+#  beacons_plugin:
+#    git:
+#      url: https://github.com/Kirara02/simple_beacons_flutter.git
+#      ref: master
   cached_network_image: ^3.4.1
   device_imei:
     git:

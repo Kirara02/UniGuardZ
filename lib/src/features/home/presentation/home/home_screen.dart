@@ -9,6 +9,7 @@ import 'package:ugz_app/src/constants/gen/assets.gen.dart';
 import 'package:ugz_app/src/features/home/domain/usecase/start_alarm/start_alarm_params.dart';
 import 'package:ugz_app/src/features/home/domain/usecase/stop_alarm/stop_alarm_params.dart';
 import 'package:ugz_app/src/features/home/providers/alarm_provider.dart';
+import 'package:ugz_app/src/features/home/providers/beacon_providers.dart';
 import 'package:ugz_app/src/features/settings/widgets/app_theme_mode_tile/app_theme_mode_tile.dart';
 import 'package:ugz_app/src/global_providers/location_providers.dart';
 import 'package:ugz_app/src/routes/router_config.dart';
@@ -303,6 +304,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<Position?> _getLocation(BuildContext context, WidgetRef ref) async {
+    ref.read(locationTriggerProvider.notifier).state++;
+
     final locationData = await ref.read(locationProvider.future);
 
     locationData.position;

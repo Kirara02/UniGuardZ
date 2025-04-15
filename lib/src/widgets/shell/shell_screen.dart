@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:badges/badges.dart' as badges;
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:ugz_app/src/constants/colors.dart';
 import 'package:ugz_app/src/constants/gen/assets.gen.dart';
 import 'package:ugz_app/src/features/auth/providers/user_data_provider.dart';
+import 'package:ugz_app/src/features/home/providers/beacon_providers.dart';
+import 'package:ugz_app/src/global_providers/global_providers.dart';
 import 'package:ugz_app/src/global_providers/pending_count_providers.dart';
 // import 'package:ugz_app/src/global_providers/uniguard_background_service.dart';
 import 'package:ugz_app/src/local/usecases/delete_all_pending_forms/delete_all_pending_forms.dart';
@@ -30,7 +33,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
   void initState() {
     super.initState();
     WidgetsFlutterBinding.ensureInitialized().addPostFrameCallback((_) {
-      // ref.read(uniguardServiceProvider.notifier).startService();
+      ref.read(beaconsProvider.notifier).getBeacons();
     });
   }
 
@@ -46,13 +49,41 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
     ref.listen(userDataProvider, (previous, next) {
       if (previous != null && next is AsyncData && next.value == null) {
         // Stop background service when logging out
-
-        // ref.read(geolocationServiceProvider.notifier).stopTracking();
-        // ref.read(uniguardServiceProvider.notifier).stopService();
-
+        ref.read(beaconServiceProvider).stopBeaconService();
         LoginRoute().go(context);
       } else if (next is AsyncError) {
         context.showSnackBar(next.error.toString());
+      }
+    });
+
+    ref.listen(beaconsProvider, (prev, next) async {
+      final packageInfo = await PackageInfo.fromPlatform();
+      final credentials = ref.read(credentialsProvider);
+      final buildCode = packageInfo.buildNumber;
+      final deviceName = ref.read(deviceNameProvider);
+      final deviceId = ref.read(deviceIdProvider);
+
+      if (next is AsyncData && next.value!.isNotEmpty) {
+        try {
+          await ref
+              .read(beaconServiceProvider)
+              .initialize(
+                token: credentials ?? '',
+                beaconIds:
+                    next.value!
+                        .map((beacon) => beacon.beacon!.beaconUuid)
+                        .toList(),
+                headers: {
+                  "x-app-build": buildCode,
+                  'x-device-name': deviceName ?? '',
+                  'x-device-uid': deviceId ?? '',
+                },
+              );
+
+          await ref.read(beaconServiceProvider).startBeaconService();
+        } catch (e) {
+          print('Error initializing beacon service: $e');
+        }
       }
     });
 

@@ -38,6 +38,7 @@ android {
         }
     }
 
+    
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.uniguard.uniguard_z"
@@ -62,10 +63,22 @@ android {
             isShrinkResources = true
         }
     }
+
+    buildFeatures {
+        buildConfig = true
+    }
 }
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:1.2.2")
+    
+    // Retrofit
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+
+    // AltBeacon
+    implementation("org.altbeacon:android-beacon-library:2.19.6")
 }
 
 secrets {

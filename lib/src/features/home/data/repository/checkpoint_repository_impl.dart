@@ -99,10 +99,12 @@ class CheckpointRepositoryImpl implements CheckpointRepository {
           "x-app-build": buildCode,
           'x-device-name': deviceName,
           'x-device-uid': deviceId,
-          'checkpoint_type_id':
-              checkpointType, // 1 = BEACONS, 2 = NFC, 3 = RFID, 4 = GEOFENCE
         },
       ),
+      queryParameters: {
+        'checkpoint_type_id': checkpointType,
+        // 1 = BEACONS, 2 = NFC, 3 = RFID, 4 = GEOFENCE
+      },
       itemConverter: (json) => CheckpointModel.fromJson(json),
     );
   }
