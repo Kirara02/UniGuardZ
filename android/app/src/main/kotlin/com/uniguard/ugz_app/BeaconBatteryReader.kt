@@ -2,13 +2,11 @@ package com.uniguard.ugz_app
 
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
-import android.bluetooth.BluetoothGattService
+import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
-import com.uniguard.ugz_app.BuildConfig
 import android.content.Context
 import android.util.Log
 import androidx.annotation.RequiresPermission
@@ -22,6 +20,8 @@ class BeaconBatteryReader(private val context: Context) {
     private var batteryLevel: Int = 0 // Default value
     private var isReading = false
     private var connectionLatch: CountDownLatch? = null
+    private val bluetoothManager: BluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+    private val bluetoothAdapter: BluetoothAdapter = bluetoothManager.adapter
 
     companion object {
         private const val TAG = "BeaconBatteryReader"
@@ -110,13 +110,12 @@ class BeaconBatteryReader(private val context: Context) {
         }
 
         isReading = true
-        batteryLevel = 100 // Reset to default
+        batteryLevel = 0 // Reset to default
         connectionLatch = CountDownLatch(1)
 
         try {
             val macAddress = beacon.bluetoothAddress
             if (macAddress != null) {
-                val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
                 val bluetoothDevice = bluetoothAdapter.getRemoteDevice(macAddress)
                 if (bluetoothDevice != null) {
                     if (BuildConfig.DEBUG) {

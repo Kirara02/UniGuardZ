@@ -10,10 +10,10 @@ import 'package:ugz_app/src/features/auth/providers/user_data_provider.dart';
 import 'package:ugz_app/src/features/home/providers/beacon_providers.dart';
 import 'package:ugz_app/src/global_providers/global_providers.dart';
 import 'package:ugz_app/src/global_providers/pending_count_providers.dart';
-// import 'package:ugz_app/src/global_providers/uniguard_background_service.dart';
 import 'package:ugz_app/src/local/usecases/delete_all_pending_forms/delete_all_pending_forms.dart';
 import 'package:ugz_app/src/routes/router_config.dart';
 import 'package:ugz_app/src/utils/extensions/custom_extensions.dart';
+import 'package:ugz_app/src/utils/misc/print.dart';
 import 'package:ugz_app/src/widgets/custom_view.dart';
 import 'package:ugz_app/src/widgets/dialog/exit_app_dialog.dart';
 
@@ -32,8 +32,28 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsFlutterBinding.ensureInitialized().addPostFrameCallback((_) {
-      ref.read(beaconsProvider.notifier).getBeacons();
+    WidgetsFlutterBinding.ensureInitialized().addPostFrameCallback((_) async {
+      // Initialize and start beacon service
+      final packageInfo = await PackageInfo.fromPlatform();
+      final credentials = ref.read(credentialsProvider);
+      final buildCode = packageInfo.buildNumber;
+      final deviceName = ref.read(deviceNameProvider);
+      final deviceId = ref.read(deviceIdProvider);
+
+      try {
+        await ref
+            .read(beaconServiceProvider)
+            .startBeaconService(
+              headers: {
+                "x-app-build": buildCode,
+                'x-device-name': deviceName ?? '',
+                'x-device-uid': deviceId ?? '',
+                'Authorization': credentials ?? '',
+              },
+            );
+      } catch (e) {
+        printIfDebug('Error initializing beacon service: $e');
+      }
     });
   }
 
@@ -53,37 +73,6 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
         LoginRoute().go(context);
       } else if (next is AsyncError) {
         context.showSnackBar(next.error.toString());
-      }
-    });
-
-    ref.listen(beaconsProvider, (prev, next) async {
-      final packageInfo = await PackageInfo.fromPlatform();
-      final credentials = ref.read(credentialsProvider);
-      final buildCode = packageInfo.buildNumber;
-      final deviceName = ref.read(deviceNameProvider);
-      final deviceId = ref.read(deviceIdProvider);
-
-      if (next is AsyncData && next.value!.isNotEmpty) {
-        try {
-          await ref
-              .read(beaconServiceProvider)
-              .initialize(
-                token: credentials ?? '',
-                beaconIds:
-                    next.value!
-                        .map((beacon) => beacon.beacon!.beaconUuid)
-                        .toList(),
-                headers: {
-                  "x-app-build": buildCode,
-                  'x-device-name': deviceName ?? '',
-                  'x-device-uid': deviceId ?? '',
-                },
-              );
-
-          await ref.read(beaconServiceProvider).startBeaconService();
-        } catch (e) {
-          print('Error initializing beacon service: $e');
-        }
       }
     });
 
@@ -117,7 +106,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Assets.icons.scan.svg(width: 42),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text("Scan", style: context.textTheme.labelMedium),
                   ],
                 ),
@@ -216,7 +205,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Assets.images.nfcLogoWhite.image(width: 48),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text("Scan", style: context.textTheme.labelLarge),
                   ],
                 ),

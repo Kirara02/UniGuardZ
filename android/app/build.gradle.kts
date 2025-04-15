@@ -79,6 +79,13 @@ dependencies {
 
     // AltBeacon
     implementation("org.altbeacon:android-beacon-library:2.19.6")
+
+    // Google Play Services Location
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+
+    // Kotlin Coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.9.0")
 }
 
 secrets {

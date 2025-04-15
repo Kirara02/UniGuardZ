@@ -3,24 +3,18 @@ package com.uniguard.ugz_app
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
-import android.content.Context
 import android.content.Intent
-import android.location.LocationManager
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.uniguard.ugz_app.api.BeaconData
 import com.uniguard.ugz_app.api.BeaconScanData
-import com.uniguard.ugz_app.api.LocationRequest
 import com.uniguard.ugz_app.api.RetrofitClient
-import com.uniguard.ugz_app.BuildConfig
-import io.flutter.embedding.engine.FlutterEngine
-import io.flutter.embedding.engine.dart.DartExecutor
-import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import org.altbeacon.beacon.Beacon
 import org.altbeacon.beacon.BeaconManager
 import org.altbeacon.beacon.BeaconParser
@@ -34,25 +28,27 @@ import androidx.core.content.ContextCompat
 import org.altbeacon.beacon.service.RunningAverageRssiFilter
 import java.util.Timer
 import java.util.TimerTask
-import java.util.concurrent.ConcurrentHashMap
-import com.uniguard.ugz_app.BeaconBatteryReader
 import kotlinx.coroutines.SupervisorJob
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationToken
+import com.google.android.gms.tasks.CancellationTokenSource
+import com.google.android.gms.tasks.OnTokenCanceledListener
 
 class BeaconService : Service(), RangeNotifier, MonitorNotifier {
-    private lateinit var channel: MethodChannel
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var isScanning = false
     private val notificationId = AtomicInteger(0)
     private lateinit var beaconManager: BeaconManager
-    private var validBeaconIds: List<String> = emptyList()
-    private var authToken: String = ""
     private var headers: Map<String, String> = emptyMap()
     private val scannedBeacons = mutableMapOf<String, BeaconScanData>()
     private var beaconBuffer = mutableMapOf<String, BeaconScanData>()
     private var uploadTimer: Timer? = null
     private val UPLOAD_INTERVAL = 60000L // 1 minute in milliseconds
     private val SCAN_INTERVAL = 1000L // 1 second in milliseconds
-    private val batteryReader = BeaconBatteryReader(this)
+    private lateinit var batteryReader: BeaconBatteryReader
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
 
     companion object {
         private const val CHANNEL_ID = "BeaconServiceChannel"
@@ -82,17 +78,15 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
         createNotificationChannel()
         startForeground(NOTIFICATION_ID, createNotification())
         
-        val engine = FlutterEngine(this)
-        engine.dartExecutor.executeDartEntrypoint(
-            DartExecutor.DartEntrypoint.createDefault()
-        )
+        // Initialize FusedLocationProviderClient
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(applicationContext)
         
-        channel = MethodChannel(engine.dartExecutor.binaryMessenger, "com.uniguard.ugz_app/beacon_service")
-        setupMethodChannel()
+        // Initialize BeaconBatteryReader with application context
+        batteryReader = BeaconBatteryReader(applicationContext)
         
-        // Initialize BeaconManager with multiple beacon layouts
+        // Initialize BeaconManager with application context
         BeaconManager.setRssiFilterImplClass(RunningAverageRssiFilter::class.java)
-        beaconManager = BeaconManager.getInstanceForApplication(this)
+        beaconManager = BeaconManager.getInstanceForApplication(applicationContext)
         logDebug("BeaconManager initialized")
         
         // Add support for iBeacon
@@ -133,41 +127,27 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
     private fun createNotification() = NotificationCompat.Builder(this, CHANNEL_ID)
         .setContentTitle("Beacon Service")
         .setContentText("Scanning for beacons...")
-        .setSmallIcon(android.R.drawable.ic_dialog_info)
+        .setSmallIcon(R.mipmap.ic_launcher)
         .setPriority(NotificationCompat.PRIORITY_LOW)
         .build()
 
-    private fun setupMethodChannel() {
-        channel.setMethodCallHandler { call, result ->
-            when (call.method) {
-                "initialize" -> {
-                    val token = call.argument<String>("token") ?: ""
-                    val beaconIds = call.argument<List<String>>("beaconIds") ?: emptyList()
-                    val headersMap = call.argument<Map<String, String>>("headers") ?: emptyMap()
-                    initialize(token, beaconIds, headersMap)
-                    result.success(null)
-                }
-                "startBeaconService" -> {
-                    startBeaconService()
-                    result.success(null)
-                }
-                "stopBeaconService" -> {
-                    stopBeaconService()
-                    result.success(null)
-                }
-                else -> result.notImplemented()
-            }
-        }
-    }
 
-    private fun initialize(token: String, beaconIds: List<String>, headers: Map<String, String>) {
-        this.authToken = token
+
+    private fun initialize(headers: Map<String, String>) {
         this.headers = headers
         
-        // Update Retrofit client with new headers
-        RetrofitClient.updateHeaders(headers + mapOf("Authorization" to "Bearer $token"))
+        // Add Bearer prefix to Authorization header if it exists
+        val updatedHeaders = headers.toMutableMap()
+        headers["Authorization"]?.let { authHeader ->
+            if (!authHeader.startsWith("Bearer ")) {
+                updatedHeaders["Authorization"] = "Bearer $authHeader"
+            }
+        }
         
-        logDebug("BeaconService initialized with token and headers")
+        // Update Retrofit client with updated headers
+        RetrofitClient.updateHeaders(updatedHeaders)
+        
+        logDebug("BeaconService initialized with headers")
     }
 
     private fun stopForegroundCompat() {
@@ -235,7 +215,13 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
         uploadTimer?.schedule(object : TimerTask() {
             override fun run() {
                 logDebug("Upload timer triggered at ${System.currentTimeMillis()}")
-                uploadBufferedBeacons()
+                // Only upload if there are beacons in the buffer
+                if (beaconBuffer.isNotEmpty()) {
+                    logDebug("{\"status\": \"upload_scheduled\", \"beacon_count\": \"${beaconBuffer.size}\"}")
+                    uploadBufferedBeacons()
+                } else {
+                    logDebug("{\"status\": \"upload_skipped\", \"reason\": \"no_beacons_in_buffer\"}")
+                }
                 scheduleNextUpload()
             }
         }, UPLOAD_INTERVAL)
@@ -331,10 +317,18 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
                             .build()
                     }
 
-                    // Get battery level if beacon is available
-                    val batteryLevel = beacon?.let { batteryReader.readBatteryLevel(it) } ?: 0
+                    // Get battery level if beacon is available and we have permission
+                    val batteryLevel = if (ContextCompat.checkSelfPermission(
+                            this@BeaconService,
+                            Manifest.permission.BLUETOOTH_CONNECT
+                        ) == PackageManager.PERMISSION_GRANTED) {
+                        beacon?.let { batteryReader.readBatteryLevel(it) } ?: 0
+                    } else {
+                        logError("{\"status\": \"permission_error\", \"error\": \"BLUETOOTH_CONNECT permission not granted\"}")
+                        0
+                    }
                     
-                    val request = LocationRequest.create(
+                    val request = com.uniguard.ugz_app.api.LocationRequest.create(
                         type = "beacon",
                         latitude = location.latitude,
                         longitude = location.longitude,
@@ -369,8 +363,6 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
 
     private suspend fun getCurrentLocation(): android.location.Location? {
         return try {
-            val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-            
             // Check if we have location permissions
             if (ContextCompat.checkSelfPermission(
                     this,
@@ -385,14 +377,21 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
                 return null
             }
 
-            // Try to get last known location from GPS provider
-            var location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-            
-            // If GPS location is not available, try network provider
-            if (location == null) {
-                location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+            // Get current location with high accuracy
+            val location = fusedLocationClient.getCurrentLocation(
+                Priority.PRIORITY_HIGH_ACCURACY,
+                object : CancellationToken() {
+                    override fun onCanceledRequested(listener: OnTokenCanceledListener) = CancellationTokenSource().token
+                    override fun isCancellationRequested() = false
+                }
+            ).await()
+
+            if (location != null) {
+                logDebug("{\"status\": \"location_updated\", \"accuracy\": \"${location.accuracy}\", \"provider\": \"${location.provider}\"}")
+            } else {
+                logError("{\"status\": \"location_error\", \"error\": \"Failed to get current location\"}")
             }
-            
+
             location
         } catch (e: Exception) {
             logError("Error getting location", e)
@@ -418,12 +417,39 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // Handle initialization parameters if they exist
         intent?.let {
-            if (it.hasExtra("token") && it.hasExtra("beaconIds") && it.hasExtra("headers")) {
-                val token = it.getStringExtra("token") ?: ""
-                val beaconIds = it.getStringArrayExtra("beaconIds")?.toList() ?: emptyList()
-                val headers = it.getSerializableExtra("headers") as? HashMap<String, String> ?: emptyMap()
+            if (it.hasExtra("headers")) {
+                val headers = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    val parcelableHeaders = it.getParcelableExtra("headers", HashMap::class.java)
+                    if (parcelableHeaders is HashMap<*, *>) {
+                        try {
+                            @Suppress("UNCHECKED_CAST")
+                            parcelableHeaders as HashMap<String, String>
+                        } catch (e: ClassCastException) {
+                            logError("Invalid headers format from Parcelable: ${e.message}")
+                            emptyMap()
+                        }
+                    } else {
+                        logError("Parcelable headers is not a HashMap")
+                        emptyMap()
+                    }
+                } else {
+                    @Suppress("DEPRECATION")
+                    val serializedHeaders = it.getSerializableExtra("headers")
+                    if (serializedHeaders is HashMap<*, *>) {
+                        try {
+                            @Suppress("UNCHECKED_CAST")
+                            serializedHeaders as HashMap<String, String>
+                        } catch (e: ClassCastException) {
+                            logError("Invalid headers format: ${e.message}")
+                            emptyMap()
+                        }
+                    } else {
+                        logError("Headers is not a HashMap")
+                        emptyMap()
+                    }
+                }
                 
-                initialize(token, beaconIds, headers)
+                initialize(headers)
             }
         }
         
