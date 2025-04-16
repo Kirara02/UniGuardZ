@@ -1,4 +1,4 @@
-package com.uniguard.ugz_app
+package com.uniguard.ugz_app.utils
 
 enum class Proximity(val value: String) {
     UNKNOWN("Unknown"),

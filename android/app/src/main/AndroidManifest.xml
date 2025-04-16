@@ -90,7 +90,7 @@
             android:permission="android.permission.FOREGROUND_SERVICE_LOCATION" /> -->
 
         <service
-            android:name=".BeaconService"
+            android:name=".service.BeaconService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="location"

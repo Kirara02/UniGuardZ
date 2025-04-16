@@ -1,4 +1,4 @@
-package com.uniguard.ugz_app
+package com.uniguard.ugz_app.service
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -35,6 +35,9 @@ import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationToken
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.android.gms.tasks.OnTokenCanceledListener
+import com.uniguard.ugz_app.utils.BeaconBatteryReader
+import com.uniguard.ugz_app.BuildConfig
+import com.uniguard.ugz_app.R
 
 class BeaconService : Service(), RangeNotifier, MonitorNotifier {
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())

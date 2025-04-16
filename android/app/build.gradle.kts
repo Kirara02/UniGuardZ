@@ -70,7 +70,7 @@ android {
 }
 
 dependencies {
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:1.2.2")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     
     // Retrofit
     implementation("com.squareup.retrofit2:retrofit:2.9.0")

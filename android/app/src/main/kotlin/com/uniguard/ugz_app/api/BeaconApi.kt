@@ -1,7 +1,7 @@
 package com.uniguard.ugz_app.api
 
 import com.google.gson.annotations.SerializedName
-import com.uniguard.ugz_app.Proximity
+import com.uniguard.ugz_app.utils.Proximity
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.POST

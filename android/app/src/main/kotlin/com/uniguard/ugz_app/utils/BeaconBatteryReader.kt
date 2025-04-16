@@ -1,4 +1,4 @@
-package com.uniguard.ugz_app
+package com.uniguard.ugz_app.utils
 
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
@@ -10,6 +10,7 @@ import android.bluetooth.BluetoothProfile
 import android.content.Context
 import android.util.Log
 import androidx.annotation.RequiresPermission
+import com.uniguard.ugz_app.BuildConfig
 import org.altbeacon.beacon.Beacon
 import java.util.UUID
 import java.util.concurrent.CountDownLatch
@@ -56,7 +57,9 @@ class BeaconBatteryReader(private val context: Context) {
                 }
                 val batteryService = gatt.getService(BATTERY_SERVICE_UUID)
                 if (batteryService != null) {
-                    val batteryLevelChar = batteryService.getCharacteristic(BATTERY_LEVEL_CHARACTERISTIC_UUID)
+                    val batteryLevelChar = batteryService.getCharacteristic(
+                        BATTERY_LEVEL_CHARACTERISTIC_UUID
+                    )
                     if (batteryLevelChar != null) {
                         if (BuildConfig.DEBUG) {
                             Log.d(TAG, "Reading battery level characteristic")
