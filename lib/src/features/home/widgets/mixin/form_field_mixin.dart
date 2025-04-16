@@ -211,19 +211,22 @@ mixin FormFieldMixin<T extends BaseField> {
   }
 
   Widget buildPickListField(
-      String fieldName,
-      String fieldId,
-      bool isActive,
-      bool isRequired,
-      Map<String, dynamic> formValues,
-      Function(String, dynamic) onValueChanged,
-      PickList? pickList) {
+    String fieldName,
+    String fieldId,
+    bool isActive,
+    bool isRequired,
+    Map<String, dynamic> formValues,
+    Function(String, dynamic) onValueChanged,
+    PickList? pickList,
+  ) {
     return PickListFieldVertical<String>(
       label: fieldName,
       value: formValues[fieldId],
       items: pickList?.options.map((item) => item.id).toList() ?? [],
-      itemAsString: (String? id) =>
-          pickList?.options.firstWhere((option) => option.id == id).name ?? "",
+      itemAsString:
+          (String? id) =>
+              pickList?.options.firstWhere((option) => option.id == id).name ??
+              "",
       onChanged: (value) => onValueChanged(fieldId, value),
       isRequired: isRequired,
     );

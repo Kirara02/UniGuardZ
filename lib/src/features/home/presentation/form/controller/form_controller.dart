@@ -168,9 +168,9 @@ class FormController extends _$FormController {
         (e) => FormField(
           id: e.id.toString(),
           fieldTypeId: e.typeId!,
-          fieldTypeName: "options",
+          fieldTypeName: "select",
           formFieldName: e.inputName!,
-          value: e.value ?? "",
+          value: e.pickListName ?? "",
         ),
       ),
     );

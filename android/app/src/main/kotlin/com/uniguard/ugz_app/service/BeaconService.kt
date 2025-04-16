@@ -129,8 +129,8 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
 
     private fun createNotification() = NotificationCompat.Builder(this, CHANNEL_ID)
         .setContentTitle("Beacon Service")
-        .setContentText("Scanning for beacons...")
-        .setSmallIcon(R.mipmap.ic_launcher)
+        .setContentText("Scanning for beacons")
+        .setSmallIcon(R.drawable.uniguard_logo)
         .setPriority(NotificationCompat.PRIORITY_LOW)
         .build()
 

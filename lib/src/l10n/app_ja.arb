@@ -42,6 +42,7 @@
   "cancel": "キャンセル",
   "ok" : "OK",
   "retry_upload": "アップロードを再試行",
+  "delete": "削除",
   "role": "役割",
   "old_password": "現在のパスワード",
   "new_password": "新しいパスワード",

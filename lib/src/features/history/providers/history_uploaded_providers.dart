@@ -7,7 +7,7 @@ import 'package:ugz_app/src/utils/misc/result.dart';
 
 part 'history_uploaded_providers.g.dart';
 
-@Riverpod(keepAlive: true)
+@riverpod
 class HistoryUploaded extends _$HistoryUploaded {
   static const _pageSize = 10;
   int _currentPage = 1;

@@ -219,6 +219,14 @@ class _TaskScreenState extends ConsumerState<TaskScreen>
         return;
       }
 
+      // Validate required fields
+      final validationError = _validateRequiredFields(task);
+      if (validationError != null) {
+        print("Validation error: $validationError");
+        context.showSnackBar(validationError);
+        return;
+      }
+
       // Set loading state before starting any process
       ref
           .read(taskControllerProvider(widget.taskId).notifier)
@@ -252,6 +260,40 @@ class _TaskScreenState extends ConsumerState<TaskScreen>
           .read(taskControllerProvider(widget.taskId).notifier)
           .setSubmitting(false);
     }
+  }
+
+  String? _validateRequiredFields(TaskModel task) {
+    print("check validation");
+    for (var field in task.fields) {
+      final fieldId = field.id;
+      final fieldName = field.taskFieldName;
+      final fieldTypeId = field.fieldTypeId;
+      final value = formValues[fieldId];
+
+      print("Field: $fieldName");
+      print("Type: $fieldTypeId");
+      print("Value: $value");
+
+      // All task fields are required by default
+      if (value == null || value.toString().trim().isEmpty) {
+        // Special validation for image fields
+        if (fieldTypeId == "4") {
+          print("Image validation failed for: $fieldName");
+          return "Image for '$fieldName' is required";
+        }
+        // Special validation for signature fields
+        else if (fieldTypeId == "5") {
+          print("Signature validation failed for: $fieldName");
+          return "Signature for '$fieldName' is required";
+        }
+        // Validation for other fields
+        else {
+          print("Field validation failed for: $fieldName");
+          return "Field '$fieldName' is required";
+        }
+      }
+    }
+    return null;
   }
 
   FormData _generateFormData(TaskModel task) {

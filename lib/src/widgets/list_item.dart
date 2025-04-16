@@ -7,6 +7,7 @@ import 'package:ugz_app/src/constants/colors.dart';
 
 class ListItem extends ConsumerWidget {
   final VoidCallback onPressed;
+  final VoidCallback? onLongPress;
   final String? prefixIconPath;
   final String title;
   final String? subtitle;
@@ -18,6 +19,7 @@ class ListItem extends ConsumerWidget {
     super.key,
     required this.title,
     required this.onPressed,
+    this.onLongPress,
     this.type = ListItemType.svg,
     this.subtitle,
     this.suffix,
@@ -29,6 +31,7 @@ class ListItem extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return InkWell(
       onTap: onPressed,
+      onLongPress: onLongPress,
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(

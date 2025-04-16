@@ -93,34 +93,31 @@ class _HistoryUploadedSectionState
                   }
 
                   final historyItem = value[index];
-                  Widget? iconPath;
+                  Widget? icon;
 
                   // Determine icon based on type
                   switch (historyItem.payloadData['type'].toLowerCase()) {
                     case 'form':
-                      iconPath = Assets.icons.file.svg(width: 20, height: 20);
+                      icon = Assets.icons.file.svg(width: 20, height: 20);
                     case 'task':
-                      iconPath = Assets.icons.checklist.svg(
-                        width: 20,
-                        height: 20,
-                      );
+                      icon = Assets.icons.checklist.svg(width: 20, height: 20);
                     case 'activity':
-                      iconPath = Assets.icons.guard.svg(width: 20, height: 20);
+                      icon = Assets.icons.guard.svg(width: 20, height: 20);
                     case 'user':
-                      iconPath =
-                          iconPath = Icon(
+                      icon =
+                          icon = Icon(
                             Icons.person_outline_rounded,
                             color: Colors.blue,
                           );
                     case 'alarm':
-                      iconPath = Icon(
+                      icon = Icon(
                         Icons.warning_amber_rounded,
                         color: Colors.blue,
                       );
                     case 'checkpoint':
-                      iconPath = Icon(Icons.wifi_tethering, color: Colors.blue);
+                      icon = Icon(Icons.wifi_tethering, color: Colors.blue);
                     default:
-                      iconPath = Assets.icons.pinLocation.svg(
+                      icon = Assets.icons.pinLocation.svg(
                         width: 20,
                         height: 20,
                       );
@@ -136,7 +133,7 @@ class _HistoryUploadedSectionState
                         historyItem.originalSubmittedTime,
                       ).toLocal(),
                     ),
-                    prefix: iconPath,
+                    prefix: icon,
                     suffix: InkWell(
                       onTap:
                           () => HistoryDetailRoute(

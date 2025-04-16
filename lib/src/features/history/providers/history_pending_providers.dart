@@ -29,3 +29,23 @@ class HistoryPending extends _$HistoryPending {
     yield* result;
   }
 }
+
+@riverpod
+class PendingFormsSelection extends _$PendingFormsSelection {
+  @override
+  Set<int> build() => {};
+
+  void toggleSelection(int id) {
+    if (state.contains(id)) {
+      state = {...state}..remove(id);
+    } else {
+      state = {...state}..add(id);
+    }
+  }
+
+  void clearSelection() {
+    state = {};
+  }
+
+  bool isSelected(int id) => state.contains(id);
+}

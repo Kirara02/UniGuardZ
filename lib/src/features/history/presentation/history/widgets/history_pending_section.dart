@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:ugz_app/src/constants/colors.dart';
 import 'package:ugz_app/src/constants/enum.dart';
 import 'package:ugz_app/src/constants/gen/assets.gen.dart';
 import 'package:ugz_app/src/features/history/providers/history_pending_providers.dart';
 import 'package:ugz_app/src/features/history/providers/retry_upload_providers.dart';
 import 'package:ugz_app/src/local/record/pending_forms_model.dart';
+import 'package:ugz_app/src/local/usecases/delete_pending_forms_by_id/delete_pending_forms_by_id.dart';
+import 'package:ugz_app/src/local/usecases/delete_pending_forms_by_id/delete_pending_forms_by_id_params.dart';
 import 'package:ugz_app/src/routes/router_config.dart';
 import 'package:ugz_app/src/utils/misc/print.dart';
 import 'package:ugz_app/src/widgets/emoticons.dart';
@@ -19,11 +22,13 @@ class HistoryPendingSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncController = ref.watch(historyPendingProvider);
     final uploadingState = ref.watch(retryUploadStateNotifierProvider);
+    final selectionState = ref.watch(pendingFormsSelectionProvider);
+    final isSelectionMode = selectionState.isNotEmpty;
 
     return Stack(
       children: [
         Padding(
-          padding: const EdgeInsets.only(top: 60.0),
+          padding: const EdgeInsets.only(top: 72),
           child: asyncController.when(
             data: (stream) {
               return StreamBuilder<List<PendingFormsModel>>(
@@ -69,6 +74,10 @@ class HistoryPendingSection extends ConsumerWidget {
                             uploadingState.isUploading &&
                             uploadingState.currentItemId == form.id;
 
+                        final isSelected = ref
+                            .watch(pendingFormsSelectionProvider)
+                            .contains(form.id);
+
                         return ListItem(
                           title: form.description,
                           subtitle: DateFormat(
@@ -76,7 +85,19 @@ class HistoryPendingSection extends ConsumerWidget {
                           ).format(form.timestamp.toLocal()),
                           prefixIconPath: iconPath,
                           suffix:
-                              isUploading
+                              isSelectionMode
+                                  ? Checkbox(
+                                    value: isSelected,
+                                    onChanged: (value) {
+                                      ref
+                                          .read(
+                                            pendingFormsSelectionProvider
+                                                .notifier,
+                                          )
+                                          .toggleSelection(form.id);
+                                    },
+                                  )
+                                  : isUploading
                                   ? const SizedBox(
                                     width: 20,
                                     height: 20,
@@ -90,10 +111,21 @@ class HistoryPendingSection extends ConsumerWidget {
                                         () => _retryUpload(context, ref, form),
                                   ),
                           onPressed:
-                              () => HistoryDetailRoute(
-                                historyId: form.formId,
-                                historyType: HistoryType.pending.value,
-                              ).push(context),
+                              isSelectionMode
+                                  ? () => ref
+                                      .read(
+                                        pendingFormsSelectionProvider.notifier,
+                                      )
+                                      .toggleSelection(form.id)
+                                  : () => HistoryDetailRoute(
+                                    historyId: form.formId,
+                                    historyType: HistoryType.pending.value,
+                                  ).push(context),
+                          onLongPress: () {
+                            ref
+                                .read(pendingFormsSelectionProvider.notifier)
+                                .toggleSelection(form.id);
+                          },
                         );
                       },
                     ),
@@ -109,32 +141,64 @@ class HistoryPendingSection extends ConsumerWidget {
           top: 0,
           left: 0,
           right: 0,
-          child: ElevatedButton(
-            onPressed:
-                uploadingState.isUploading
-                    ? null
-                    : () => _retryUploadAll(context, ref),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (uploadingState.isUploading)
-                  const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed:
+                          isSelectionMode
+                              ? () => _deleteSelected(context, ref)
+                              : uploadingState.isUploading
+                              ? null
+                              : () => _retryUploadAll(context, ref),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (uploadingState.isUploading)
+                            const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            ),
+                          if (uploadingState.isUploading)
+                            const SizedBox(width: 8),
+                          Text(
+                            isSelectionMode
+                                ? context.l10n!.delete
+                                : context.l10n!.retry_upload,
+                            style: context.textTheme.labelMedium!.copyWith(
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                if (uploadingState.isUploading) const SizedBox(width: 8),
-                Text(
-                  context.l10n!.retry_upload,
-                  style: context.textTheme.labelMedium!.copyWith(
-                    color: Colors.white,
-                  ),
+                  if (isSelectionMode)
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed:
+                          () =>
+                              ref
+                                  .read(pendingFormsSelectionProvider.notifier)
+                                  .clearSelection(),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Long press for delete item!",
+                style: context.textTheme.labelSmall!.copyWith(
+                  color: AppColors.warning,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ],
@@ -167,6 +231,21 @@ class HistoryPendingSection extends ConsumerWidget {
       context.showSnackBar(
         "Some forms failed to upload: ${result.errorMessage}",
       );
+    }
+  }
+
+  void _deleteSelected(BuildContext context, WidgetRef ref) async {
+    final selectedIds = ref.read(pendingFormsSelectionProvider);
+    final deletePendingFormsById = ref.read(dbDeletePendingFormsByIdProvider);
+
+    for (final id in selectedIds) {
+      await deletePendingFormsById(DeletePendingFormsByIdParams(id: id));
+    }
+
+    ref.read(pendingFormsSelectionProvider.notifier).clearSelection();
+
+    if (context.mounted) {
+      context.showSnackBar("Successfully deleted selected forms");
     }
   }
 }

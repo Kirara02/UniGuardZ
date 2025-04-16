@@ -42,6 +42,7 @@
   "cancel": "Cancel",
   "ok" : "OK",
   "retry_upload": "Retry Upload",
+  "delete": "Delete",
   "role": "Role",
   "old_password": "Old Password",
   "new_password": "New Password",

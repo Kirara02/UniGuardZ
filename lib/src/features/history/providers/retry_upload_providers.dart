@@ -351,9 +351,9 @@ class RetryUpload extends _$RetryUpload {
           FormField(
             id: select['id'].toString(),
             fieldTypeId: select['typeId'], // Select
-            fieldTypeName: "options",
+            fieldTypeName: "select",
             formFieldName: select['inputName']!,
-            value: select['value'] ?? "",
+            value: select['pickListName'] ?? "",
           ),
         );
       }
@@ -471,7 +471,7 @@ class RetryUpload extends _$RetryUpload {
           TaskField(
             id: select['id'].toString(),
             fieldTypeId: select['typeId'], // Select
-            fieldTypeName: "options",
+            fieldTypeName: "select",
             taskFieldName: select['inputName'] ?? "Select",
             value: select['value'] ?? "",
           ),

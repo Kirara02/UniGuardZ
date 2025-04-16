@@ -38,6 +38,8 @@ class AlertLogRepositoryImpl implements AlertLogRepository {
       if (limit != null) 'limit': limit,
       'start_date': startDate ?? oneMonthAgo.toIso8601String().split('T')[0],
       'end_date': endDate ?? now.toIso8601String().split('T')[0],
+      // 'start_date': startDate ?? oneMonthAgo.toUtc().toIso8601String().split('T')[0],
+      // 'end_date': endDate ?? now.toUtc().toIso8601String().split('T')[0],
     };
 
     return await _dioClient.getApiListResponse<LogAlertModel>(

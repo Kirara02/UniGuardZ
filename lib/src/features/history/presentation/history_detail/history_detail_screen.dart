@@ -276,7 +276,10 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
 
               String getDisplayValue() {
                 if (isBooleanField) {
-                  return field.fieldTypeValue == '1' ? 'True' : 'False';
+                  return field.fieldTypeValue == '1' ||
+                          field.fieldTypeValue == 'true'
+                      ? 'Yes'
+                      : 'No';
                 }
                 return field.fieldTypeValue ?? '-';
               }
@@ -351,7 +354,10 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
 
               String getDisplayValue() {
                 if (isBooleanField) {
-                  return field.fieldTypeValue == '1' ? 'True' : 'False';
+                  return field.fieldTypeValue == '1' ||
+                          field.fieldTypeValue == 'true'
+                      ? 'Yes'
+                      : 'No';
                 }
                 return field.fieldTypeValue ?? '-';
               }
@@ -529,8 +535,8 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
             String getDisplayValue() {
               if (isBooleanField) {
                 return field['value'].toString().toLowerCase() == 'true'
-                    ? 'True'
-                    : 'False';
+                    ? 'Yes'
+                    : 'No';
               }
               if (isSelectField) {
                 return '${field['pickListOptionName']} (${field['pickListName']})';

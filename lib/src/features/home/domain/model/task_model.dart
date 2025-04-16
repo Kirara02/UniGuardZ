@@ -63,7 +63,7 @@ abstract class TaskFields with _$TaskFields implements BaseField {
   String get Iid => id;
 
   @override
-  bool get IRequired => false;
+  bool get IRequired => true;
 
   @override
   PickList? get IPickList => null;
