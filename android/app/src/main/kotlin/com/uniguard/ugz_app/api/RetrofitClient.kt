@@ -41,7 +41,7 @@ object RetrofitClient {
         .addConverterFactory(GsonConverterFactory.create(GsonConfig.gson))
         .build()
 
-    val beaconApi: BeaconApi = retrofit.create(BeaconApi::class.java)
+    val apiService: ApiService = retrofit.create(ApiService::class.java)
 
     fun updateHeaders(headers: Map<String, String>) {
         currentHeaders = headers

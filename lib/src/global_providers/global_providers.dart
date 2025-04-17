@@ -7,6 +7,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:ugz_app/src/constants/db_keys.dart';
 import 'package:ugz_app/src/constants/enum.dart';
+import 'package:ugz_app/src/features/home/domain/service/uniguard_service.dart';
 import 'package:ugz_app/src/local/db/uniguard_db.dart';
 import 'package:ugz_app/src/utils/extensions/custom_extensions.dart';
 import 'package:ugz_app/src/utils/mixin/shared_preferences_client_mixin.dart';
@@ -61,19 +62,15 @@ class Credentials extends _$Credentials
 }
 
 @riverpod
-class DeviceName extends _$DeviceName
-    with SharedPreferenceClientMixin<String> {
+class DeviceName extends _$DeviceName with SharedPreferenceClientMixin<String> {
   @override
   String? build() => initialize(DBKeys.deviceName);
-
 }
 
 @riverpod
-class DeviceId extends _$DeviceId
-    with SharedPreferenceClientMixin<String> {
+class DeviceId extends _$DeviceId with SharedPreferenceClientMixin<String> {
   @override
   String? build() => initialize(DBKeys.deviceId);
-
 }
 
 @riverpod
@@ -113,3 +110,6 @@ PackageInfo packageInfo(ref) => throw UnimplementedError();
 @riverpod
 HiveCacheStore hiveCacheStore(HiveCacheStoreRef ref) =>
     HiveCacheStore(ref.watch(appDirectoryProvider)?.path);
+
+@riverpod
+UniguardService uniguardService(ref) => UniguardService();

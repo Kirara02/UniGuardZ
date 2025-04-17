@@ -78,7 +78,7 @@ dependencies {
     implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
 
     // AltBeacon
-    implementation("org.altbeacon:android-beacon-library:2.19.6")
+    implementation("org.altbeacon:android-beacon-library:2.21.1")
 
     // Google Play Services Location
     implementation("com.google.android.gms:play-services-location:21.3.0")

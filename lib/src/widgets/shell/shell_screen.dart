@@ -7,7 +7,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:ugz_app/src/constants/colors.dart';
 import 'package:ugz_app/src/constants/gen/assets.gen.dart';
 import 'package:ugz_app/src/features/auth/providers/user_data_provider.dart';
-import 'package:ugz_app/src/features/home/providers/beacon_providers.dart';
 import 'package:ugz_app/src/global_providers/global_providers.dart';
 import 'package:ugz_app/src/global_providers/pending_count_providers.dart';
 import 'package:ugz_app/src/local/usecases/delete_all_pending_forms/delete_all_pending_forms.dart';
@@ -32,29 +31,40 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
   @override
   void initState() {
     super.initState();
-    // WidgetsFlutterBinding.ensureInitialized().addPostFrameCallback((_) async {
-    //   // Initialize and start beacon service
-    //   final packageInfo = await PackageInfo.fromPlatform();
-    //   final credentials = ref.read(credentialsProvider);
-    //   final buildCode = packageInfo.buildNumber;
-    //   final deviceName = ref.read(deviceNameProvider);
-    //   final deviceId = ref.read(deviceIdProvider);
-    //
-    //   try {
-    //     await ref
-    //         .read(beaconServiceProvider)
-    //         .startBeaconService(
-    //           headers: {
-    //             "x-app-build": buildCode,
-    //             'x-device-name': deviceName ?? '',
-    //             'x-device-uid': deviceId ?? '',
-    //             'Authorization': credentials ?? '',
-    //           },
-    //         );
-    //   } catch (e) {
-    //     printIfDebug('Error initializing beacon service: $e');
-    //   }
-    // });
+    WidgetsFlutterBinding.ensureInitialized().addPostFrameCallback((_) async {
+      // Initialize and start beacon service
+      final user = ref.read(userDataProvider).valueOrNull;
+      final packageInfo = await PackageInfo.fromPlatform();
+      final credentials = ref.read(credentialsProvider);
+      final buildCode = packageInfo.buildNumber;
+      final deviceName = ref.read(deviceNameProvider);
+      final deviceId = ref.read(deviceIdProvider);
+
+      try {
+        await ref
+            .read(uniguardServiceProvider)
+            .initialize(
+              headers: {
+                "x-app-build": buildCode,
+                'x-device-name': deviceName ?? '',
+                'x-device-uid': deviceId ?? '',
+                'Authorization': credentials ?? '',
+              },
+            )
+            .then((_) async {
+              await ref.read(uniguardServiceProvider).startBeaconService();
+              if (user != null && user.parentBranch.gpsTrackingEnabled) {
+                await ref
+                    .read(uniguardServiceProvider)
+                    .startLocationUploadService(
+                      interval: user.parentBranch.gpsInterval * 1000,
+                    );
+              }
+            });
+      } catch (e) {
+        printIfDebug('Error initializing beacon service: $e');
+      }
+    });
   }
 
   @override
@@ -69,7 +79,8 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
     ref.listen(userDataProvider, (previous, next) {
       if (previous != null && next is AsyncData && next.value == null) {
         // Stop background service when logging out
-        // ref.read(beaconServiceProvider).stopBeaconService();
+        ref.read(uniguardServiceProvider).stopBeaconService();
+        ref.read(uniguardServiceProvider).stopLocationUploadService();
         LoginRoute().go(context);
       } else if (next is AsyncError) {
         context.showSnackBar(next.error.toString());

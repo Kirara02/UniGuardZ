@@ -2,30 +2,26 @@ package com.uniguard.ugz_app.service
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import com.uniguard.ugz_app.MainActivity
+import com.uniguard.ugz_app.R
 import com.uniguard.ugz_app.api.BeaconData
-import com.uniguard.ugz_app.api.BeaconScanData
 import com.uniguard.ugz_app.api.RetrofitClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import org.altbeacon.beacon.Beacon
-import org.altbeacon.beacon.BeaconManager
-import org.altbeacon.beacon.BeaconParser
-import org.altbeacon.beacon.MonitorNotifier
-import org.altbeacon.beacon.RangeNotifier
-import org.altbeacon.beacon.Region
+import org.altbeacon.beacon.*
 import java.util.concurrent.atomic.AtomicInteger
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
-import org.altbeacon.beacon.service.RunningAverageRssiFilter
 import java.util.Timer
 import java.util.TimerTask
 import kotlinx.coroutines.SupervisorJob
@@ -37,7 +33,8 @@ import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.android.gms.tasks.OnTokenCanceledListener
 import com.uniguard.ugz_app.utils.BeaconBatteryReader
 import com.uniguard.ugz_app.BuildConfig
-import com.uniguard.ugz_app.R
+import com.uniguard.ugz_app.utils.BeaconScanData
+import org.altbeacon.beacon.service.RunningAverageRssiFilter
 
 class BeaconService : Service(), RangeNotifier, MonitorNotifier {
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -49,7 +46,7 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
     private var beaconBuffer = mutableMapOf<String, BeaconScanData>()
     private var uploadTimer: Timer? = null
     private val UPLOAD_INTERVAL = 60000L // 1 minute in milliseconds
-    private val SCAN_INTERVAL = 1000L // 1 second in milliseconds
+    private val SCAN_INTERVAL = 1100L // 1.1 seconds in milliseconds
     private lateinit var batteryReader: BeaconBatteryReader
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
@@ -61,6 +58,10 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
         private fun logDebug(message: String) {
             if (BuildConfig.DEBUG) {
                 Log.d(TAG, message)
+            } else {
+                // In release mode, we can use a different logging mechanism
+                // or write to a file if needed
+                Log.i(TAG, message) // Using INFO level for release
             }
         }
         
@@ -71,48 +72,91 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
                 } else {
                     Log.e(TAG, message)
                 }
+            } else {
+                // In release mode, we can use a different logging mechanism
+                // or write to a file if needed
+                if (e != null) {
+                    Log.w(TAG, "$message - ${e.message}") // Using WARN level for release
+                } else {
+                    Log.w(TAG, message)
+                }
             }
         }
     }
 
     override fun onCreate() {
         super.onCreate()
-        logDebug("BeaconService onCreate called")
-        createNotificationChannel()
-        startForeground(NOTIFICATION_ID, createNotification())
-        
-        // Initialize FusedLocationProviderClient
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(applicationContext)
-        
-        // Initialize BeaconBatteryReader with application context
-        batteryReader = BeaconBatteryReader(applicationContext)
-        
-        // Initialize BeaconManager with application context
-        BeaconManager.setRssiFilterImplClass(RunningAverageRssiFilter::class.java)
-        beaconManager = BeaconManager.getInstanceForApplication(applicationContext)
-        logDebug("BeaconManager initialized")
-        
-        // Add support for iBeacon
-        beaconManager.beaconParsers.add(BeaconParser().setBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24"))
-        logDebug("Added iBeacon parser")
-        
-        // Add support for AltBeacon
-        beaconManager.beaconParsers.add(BeaconParser().setBeaconLayout("m:2-3=beac,i:4-19,i:20-21,i:22-23,p:24-24,d:25-25"))
-        logDebug("Added AltBeacon parser")
-        
-        beaconManager.addRangeNotifier(this)
-        beaconManager.addMonitorNotifier(this)
-        
-        // Set scan interval to 1 second
-        beaconManager.foregroundScanPeriod = SCAN_INTERVAL
-        beaconManager.foregroundBetweenScanPeriod = 0
-        beaconManager.backgroundScanPeriod = SCAN_INTERVAL
-        beaconManager.backgroundBetweenScanPeriod = 0
-
-        logDebug("Scan intervals set - ForegroundScanPeriod: $SCAN_INTERVAL, BetweenScanPeriod: 0")
-        
-        // Start scanning immediately
-        startBeaconService()
+        try {
+            logDebug("BeaconService onCreate called")
+            createNotificationChannel()
+            
+            // Check for required permissions based on Android version
+            val hasBluetoothPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.BLUETOOTH_SCAN
+                ) == PackageManager.PERMISSION_GRANTED
+            } else {
+                ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.BLUETOOTH
+                ) == PackageManager.PERMISSION_GRANTED
+            }
+            
+            val hasLocationPermission = ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+            
+            logDebug("Permissions check - Bluetooth: $hasBluetoothPermission, Location: $hasLocationPermission")
+            
+            if (!hasBluetoothPermission || !hasLocationPermission) {
+                logError("Missing required permissions - Bluetooth: $hasBluetoothPermission, Location: $hasLocationPermission")
+                stopSelf()
+                return
+            }
+            
+            // Initialize FusedLocationProviderClient
+            fusedLocationClient = LocationServices.getFusedLocationProviderClient(applicationContext)
+            
+            // Initialize BeaconBatteryReader with application context
+            batteryReader = BeaconBatteryReader(applicationContext)
+            
+            // Initialize BeaconManager with application context
+            beaconManager = BeaconManager.getInstanceForApplication(applicationContext)
+            
+            // Configure BeaconManager with foreground service settings
+            val settings = Settings(
+                scanStrategy = Settings.ForegroundServiceScanStrategy(
+                    createNotification(), NOTIFICATION_ID
+                ),
+                scanPeriods = Settings.ScanPeriods(SCAN_INTERVAL, 0, SCAN_INTERVAL, 0),
+                longScanForcingEnabled = true,
+                rssiFilterClass = RunningAverageRssiFilter::class.java
+            )
+            
+            beaconManager.replaceSettings(settings)
+            
+            // Configure BeaconManager
+            beaconManager.beaconParsers.clear() // Clear existing parsers
+            beaconManager.beaconParsers.add(BeaconParser().setBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24"))
+            beaconManager.beaconParsers.add(BeaconParser().setBeaconLayout("m:2-3=beac,i:4-19,i:20-21,i:22-23,p:24-24,d:25-25"))
+            
+            // Add notifiers
+            beaconManager.removeRangeNotifier(this)
+            beaconManager.removeMonitorNotifier(this)
+            beaconManager.addRangeNotifier(this)
+            beaconManager.addMonitorNotifier(this)
+            
+            logDebug("BeaconManager initialized with parsers: ${beaconManager.beaconParsers.size}")
+            logDebug("Scan intervals set - ForegroundScanPeriod: $SCAN_INTERVAL, BetweenScanPeriod: 0")
+            
+            // Start scanning immediately
+            startBeaconService()
+        } catch (e: Exception) {
+            logError("Error in onCreate", e)
+            stopSelf()
+        }
     }
 
     private fun createNotificationChannel() {
@@ -132,9 +176,15 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
         .setContentText("Scanning for beacons")
         .setSmallIcon(R.drawable.uniguard_logo)
         .setPriority(NotificationCompat.PRIORITY_LOW)
+        .setContentIntent(
+            PendingIntent.getActivity(
+                this,
+                0,
+                Intent(this, MainActivity::class.java),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        )
         .build()
-
-
 
     private fun initialize(headers: Map<String, String>) {
         this.headers = headers
@@ -164,29 +214,41 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
 
     private fun startBeaconService() {
         if (!isScanning) {
-            logDebug("Attempting to start beacon service...")
+            Log.i(TAG, "Attempting to start beacon service...")
             isScanning = true
             try {
-                // Ensure we're running in foreground
-                startForeground(NOTIFICATION_ID, createNotification())
-                
                 val region = Region("all-beacons-region", null, null, null)
-                logDebug("Starting ranging beacons in region: $region")
-                beaconManager.startRangingBeacons(region)
-                startUploadTimer()
-                logDebug("Beacon service started successfully in foreground mode")
-                logDebug("Scan interval set to: $SCAN_INTERVAL ms")
-                logDebug("Upload interval set to: $UPLOAD_INTERVAL ms")
+                Log.i(TAG, "Starting ranging beacons in region: $region")
                 
-                // Add debug log to verify scanning is active
-                logDebug("Beacon scanning is now active and running in foreground mode")
+                // Stop any existing ranging
+                beaconManager.stopRangingBeacons(region)
+                
+                // Start new ranging
+                beaconManager.startRangingBeacons(region)
+                Log.i(TAG, "Beacon ranging started")
+                
+                // Start the upload timer
+                startUploadTimer()
+                Log.i(TAG, "Upload timer started")
+                
+                Log.i(TAG, "Beacon service started successfully")
+                Log.i(TAG, "Scan interval: $SCAN_INTERVAL ms")
+                Log.i(TAG, "Upload interval: $UPLOAD_INTERVAL ms")
+                
+                // Schedule a check to verify scanning is working
+                Timer().schedule(object : TimerTask() {
+                    override fun run() {
+                        Log.i(TAG, "Scan status check - isScanning: $isScanning, buffer size: ${beaconBuffer.size}")
+                    }
+                }, 30000) // Check after 30 seconds
+                
             } catch (e: Exception) {
-                logError("Error starting beacon service", e)
+                Log.e(TAG, "Error starting beacon service: ${e.message}", e)
                 isScanning = false
                 stopForegroundCompat()
             }
         } else {
-            logDebug("Beacon service is already running")
+            Log.i(TAG, "Beacon service is already running")
         }
     }
 
@@ -237,7 +299,7 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
 
     // RangeNotifier implementation
     override fun didRangeBeaconsInRegion(beacons: Collection<Beacon>, region: Region) {
-        logDebug("didRangeBeaconsInRegion called - isScanning: $isScanning")
+        logDebug("didRangeBeaconsInRegion called - isScanning: $isScanning, beacons count: ${beacons.size}")
         if (!isScanning) {
             logDebug("Not scanning, returning")
             return
@@ -246,41 +308,48 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
         // Process all detected beacons without UUID validation
         if (beacons.isNotEmpty()) {
             beacons.forEach { beacon ->
-                val beaconJson = "{\n" +
-                    "  \"name\": \"${beacon.bluetoothName ?: "Unknown"}\",\n" +
-                    "  \"uuid\": \"${beacon.id1}\",\n" +
-                    "  \"macAddress\": \"${beacon.bluetoothAddress ?: "Unknown"}\",\n" +
-                    "  \"major\": \"${beacon.id2?.toInt() ?: 0}\",\n" +
-                    "  \"minor\": \"${beacon.id3?.toInt() ?: 0}\",\n" +
-                    "  \"distance\": \"${beacon.distance}\",\n" +
-                    "  \"proximity\": \"${BeaconScanData.getProximityOfBeacon(beacon).value}\",\n" +
-                    "  \"scanTime\": \"${System.currentTimeMillis()}\",\n" +
-                    "  \"rssi\": \"${beacon.rssi}\",\n" +
-                    "  \"txPower\": \"${beacon.txPower}\"\n" +
-                    "}"
-                
-                logDebug("Beacon Data: $beaconJson")
-                
-                // Update beacon buffer with latest data
-                val beaconKey = "${beacon.id1}-${beacon.id2}-${beacon.id3}"
-                beaconBuffer[beaconKey] = BeaconScanData(
-                    uuid = beacon.id1.toString(),
-                    name = beacon.bluetoothName ?: "Unknown",
-                    macAddress = beacon.bluetoothAddress ?: "Unknown",
-                    major = beacon.id2?.toInt() ?: 0,
-                    minor = beacon.id3?.toInt() ?: 0,
-                    distance = beacon.distance,
-                    txPower = beacon.txPower,
-                    proximity = BeaconScanData.getProximityOfBeacon(beacon).value,
-                    rssi = beacon.rssi,
-                    timestamp = System.currentTimeMillis(),
-                    latitude = null,
-                    longitude = null
-                )
+                try {
+                    val beaconJson = "{\n" +
+                        "  \"name\": \"${beacon.bluetoothName ?: "Unknown"}\",\n" +
+                        "  \"uuid\": \"${beacon.id1}\",\n" +
+                        "  \"macAddress\": \"${beacon.bluetoothAddress ?: "Unknown"}\",\n" +
+                        "  \"major\": \"${beacon.id2?.toInt() ?: 0}\",\n" +
+                        "  \"minor\": \"${beacon.id3?.toInt() ?: 0}\",\n" +
+                        "  \"distance\": \"${beacon.distance}\",\n" +
+                        "  \"proximity\": \"${BeaconScanData.getProximityOfBeacon(beacon).value}\",\n" +
+                        "  \"scanTime\": \"${System.currentTimeMillis()}\",\n" +
+                        "  \"rssi\": \"${beacon.rssi}\",\n" +
+                        "  \"txPower\": \"${beacon.txPower}\"\n" +
+                        "}"
+                    
+                    logDebug("Processing Beacon: $beaconJson")
+                    
+                    // Update beacon buffer with latest data
+                    val beaconKey = "${beacon.id1}-${beacon.id2}-${beacon.id3}"
+                    val beaconData = BeaconScanData(
+                        uuid = beacon.id1.toString(),
+                        name = beacon.bluetoothName ?: "Unknown",
+                        macAddress = beacon.bluetoothAddress ?: "Unknown",
+                        major = beacon.id2?.toInt() ?: 0,
+                        minor = beacon.id3?.toInt() ?: 0,
+                        distance = beacon.distance,
+                        txPower = beacon.txPower,
+                        proximity = BeaconScanData.getProximityOfBeacon(beacon).value,
+                        rssi = beacon.rssi,
+                        timestamp = System.currentTimeMillis(),
+                        latitude = null,
+                        longitude = null
+                    )
+                    
+                    beaconBuffer[beaconKey] = beaconData
+                    logDebug("Added beacon to buffer - Key: $beaconKey, Buffer size: ${beaconBuffer.size}")
+                } catch (e: Exception) {
+                    logError("Error processing beacon data", e)
+                }
             }
-            logDebug("{\"buffer_size\": \"${beaconBuffer.size}\"}")
+            logDebug("Beacon processing complete - Buffer size: ${beaconBuffer.size}")
         } else {
-            logDebug("{\"status\": \"no_beacons_detected\", \"timestamp\": \"${System.currentTimeMillis()}\"}")
+            logDebug("No beacons detected in range")
         }
     }
 
@@ -331,20 +400,20 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
                         0
                     }
                     
-                    val request = com.uniguard.ugz_app.api.LocationRequest.create(
+                    val request = com.uniguard.ugz_app.api.BeaconRequest.create(
                         type = "beacon",
                         latitude = location.latitude,
                         longitude = location.longitude,
                         timestamp = System.currentTimeMillis(),
                         beacon = BeaconData(
-                            major_value = beaconData.major,
-                            minor_value = beaconData.minor,
-                            battery_level = batteryLevel
+                            majorValue = beaconData.major,
+                            minorValue = beaconData.minor,
+                            batteryLevel = batteryLevel
                         )
                     )
 
                     try {
-                        val response = RetrofitClient.beaconApi.submitLocation(request)
+                        val response = RetrofitClient.apiService.submitBeacon(request)
                         if (response.isSuccessful) {
                             logDebug("{\"status\": \"upload_success\", \"beacon\": $beaconInfo, \"battery_level\": $batteryLevel}")
                         } else {
@@ -418,44 +487,8 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Handle initialization parameters if they exist
-        intent?.let {
-            if (it.hasExtra("headers")) {
-                val headers = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    val parcelableHeaders = it.getParcelableExtra("headers", HashMap::class.java)
-                    if (parcelableHeaders is HashMap<*, *>) {
-                        try {
-                            @Suppress("UNCHECKED_CAST")
-                            parcelableHeaders as HashMap<String, String>
-                        } catch (e: ClassCastException) {
-                            logError("Invalid headers format from Parcelable: ${e.message}")
-                            emptyMap()
-                        }
-                    } else {
-                        logError("Parcelable headers is not a HashMap")
-                        emptyMap()
-                    }
-                } else {
-                    @Suppress("DEPRECATION")
-                    val serializedHeaders = it.getSerializableExtra("headers")
-                    if (serializedHeaders is HashMap<*, *>) {
-                        try {
-                            @Suppress("UNCHECKED_CAST")
-                            serializedHeaders as HashMap<String, String>
-                        } catch (e: ClassCastException) {
-                            logError("Invalid headers format: ${e.message}")
-                            emptyMap()
-                        }
-                    } else {
-                        logError("Headers is not a HashMap")
-                        emptyMap()
-                    }
-                }
-                
-                initialize(headers)
-            }
-        }
-        
+        Log.i(TAG, "onStartCommand called")
+        startBeaconService()
         return START_STICKY
     }
 
