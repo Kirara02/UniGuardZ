@@ -6,7 +6,7 @@ import 'package:ugz_app/src/features/home/domain/usecase/get_checkpoints/get_che
 import 'package:ugz_app/src/features/home/domain/usecase/get_checkpoints/get_checkpoints_usecase.dart';
 import 'package:ugz_app/src/global_providers/global_providers.dart';
 import 'package:ugz_app/src/utils/misc/result.dart';
-import 'package:ugz_app/src/features/home/domain/service/uniguard_service.dart';
+import 'package:ugz_app/src/channel/uniguard_service.dart';
 
 part 'beacon_providers.g.dart';
 

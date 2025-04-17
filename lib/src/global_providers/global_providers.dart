@@ -7,7 +7,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:ugz_app/src/constants/db_keys.dart';
 import 'package:ugz_app/src/constants/enum.dart';
-import 'package:ugz_app/src/features/home/domain/service/uniguard_service.dart';
+import 'package:ugz_app/src/channel/uniguard_service.dart';
 import 'package:ugz_app/src/local/db/uniguard_db.dart';
 import 'package:ugz_app/src/utils/extensions/custom_extensions.dart';
 import 'package:ugz_app/src/utils/mixin/shared_preferences_client_mixin.dart';
