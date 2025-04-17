@@ -14,7 +14,21 @@ data class BeaconData(
     
     @SerializedName("battery_level")
     val batteryLevel: Int
-)
+) {
+    companion object {
+        fun create(major: Int, minor: Int, battery: Int): BeaconData {
+            return BeaconData(
+                majorValue = major,
+                minorValue = minor,
+                batteryLevel = battery
+            )
+        }
+    }
+
+    override fun toString(): String {
+        return "BeaconData(majorValue=$majorValue, minorValue=$minorValue, batteryLevel=$batteryLevel)"
+    }
+}
 
 data class BeaconRequest(
     @SerializedName("type")
@@ -30,7 +44,7 @@ data class BeaconRequest(
     val originalSubmittedTime: String,
     
     @SerializedName("beacon")
-    val beacon: BeaconData?
+    val beacon: BeaconData
 ) {
     companion object {
         fun create(
@@ -38,7 +52,7 @@ data class BeaconRequest(
             latitude: Double,
             longitude: Double,
             timestamp: Long,
-            beacon: BeaconData?
+            beacon: BeaconData
         ): BeaconRequest {
             val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
             dateFormat.timeZone = TimeZone.getTimeZone("UTC")
@@ -53,9 +67,13 @@ data class BeaconRequest(
             )
         }
     }
+
+    override fun toString(): String {
+        return "BeaconRequest(type='$type', latitude=$latitude, longitude=$longitude, originalSubmittedTime='$originalSubmittedTime', beacon=$beacon)"
+    }
 }
 
-data class LocationRequest (
+data class LocationRequest(
     @SerializedName("latitude")
     val latitude: Double,
 
@@ -63,14 +81,14 @@ data class LocationRequest (
     val longitude: Double,
 
     @SerializedName("original_submitted_time")
-    val originalSubmittedTime: String,
+    val originalSubmittedTime: String
 ) {
     companion object {
         fun create(
             latitude: Double,
             longitude: Double,
-            timestamp: Long,
-        ) : LocationRequest {
+            timestamp: Long
+        ): LocationRequest {
             val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
             dateFormat.timeZone = TimeZone.getTimeZone("UTC")
             val utcTime = dateFormat.format(Date(timestamp))
@@ -81,6 +99,10 @@ data class LocationRequest (
                 originalSubmittedTime = utcTime
             )
         }
+    }
+
+    override fun toString(): String {
+        return "LocationRequest(latitude=$latitude, longitude=$longitude, originalSubmittedTime='$originalSubmittedTime')"
     }
 }
 

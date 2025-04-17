@@ -33,7 +33,9 @@ import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.android.gms.tasks.OnTokenCanceledListener
 import com.uniguard.ugz_app.utils.BeaconBatteryReader
 import com.uniguard.ugz_app.BuildConfig
+import com.uniguard.ugz_app.service.LocationUploadService.Companion
 import com.uniguard.ugz_app.utils.BeaconScanData
+import org.altbeacon.beacon.service.BeaconService
 import org.altbeacon.beacon.service.RunningAverageRssiFilter
 
 class BeaconService : Service(), RangeNotifier, MonitorNotifier {
@@ -87,8 +89,8 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
     override fun onCreate() {
         super.onCreate()
         try {
-            logDebug("BeaconService onCreate called")
-            createNotificationChannel()
+        logDebug("BeaconService onCreate called")
+        createNotificationChannel()
             
             // Check for required permissions based on Android version
             val hasBluetoothPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -115,15 +117,15 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
                 stopSelf()
                 return
             }
-            
-            // Initialize FusedLocationProviderClient
-            fusedLocationClient = LocationServices.getFusedLocationProviderClient(applicationContext)
-            
-            // Initialize BeaconBatteryReader with application context
-            batteryReader = BeaconBatteryReader(applicationContext)
-            
-            // Initialize BeaconManager with application context
-            beaconManager = BeaconManager.getInstanceForApplication(applicationContext)
+        
+        // Initialize FusedLocationProviderClient
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(applicationContext)
+        
+        // Initialize BeaconBatteryReader with application context
+        batteryReader = BeaconBatteryReader(applicationContext)
+        
+        // Initialize BeaconManager with application context
+        beaconManager = BeaconManager.getInstanceForApplication(applicationContext)
             
             // Configure BeaconManager with foreground service settings
             val settings = Settings(
@@ -139,20 +141,20 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
             
             // Configure BeaconManager
             beaconManager.beaconParsers.clear() // Clear existing parsers
-            beaconManager.beaconParsers.add(BeaconParser().setBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24"))
-            beaconManager.beaconParsers.add(BeaconParser().setBeaconLayout("m:2-3=beac,i:4-19,i:20-21,i:22-23,p:24-24,d:25-25"))
-            
+        beaconManager.beaconParsers.add(BeaconParser().setBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24"))
+        beaconManager.beaconParsers.add(BeaconParser().setBeaconLayout("m:2-3=beac,i:4-19,i:20-21,i:22-23,p:24-24,d:25-25"))
+        
             // Add notifiers
             beaconManager.removeRangeNotifier(this)
             beaconManager.removeMonitorNotifier(this)
-            beaconManager.addRangeNotifier(this)
-            beaconManager.addMonitorNotifier(this)
-            
+        beaconManager.addRangeNotifier(this)
+        beaconManager.addMonitorNotifier(this)
+        
             logDebug("BeaconManager initialized with parsers: ${beaconManager.beaconParsers.size}")
-            logDebug("Scan intervals set - ForegroundScanPeriod: $SCAN_INTERVAL, BetweenScanPeriod: 0")
-            
-            // Start scanning immediately
-            startBeaconService()
+        logDebug("Scan intervals set - ForegroundScanPeriod: $SCAN_INTERVAL, BetweenScanPeriod: 0")
+        
+        // Start scanning immediately
+        startBeaconService()
         } catch (e: Exception) {
             logError("Error in onCreate", e)
             stopSelf()
@@ -309,37 +311,37 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
         if (beacons.isNotEmpty()) {
             beacons.forEach { beacon ->
                 try {
-                    val beaconJson = "{\n" +
-                        "  \"name\": \"${beacon.bluetoothName ?: "Unknown"}\",\n" +
-                        "  \"uuid\": \"${beacon.id1}\",\n" +
-                        "  \"macAddress\": \"${beacon.bluetoothAddress ?: "Unknown"}\",\n" +
-                        "  \"major\": \"${beacon.id2?.toInt() ?: 0}\",\n" +
-                        "  \"minor\": \"${beacon.id3?.toInt() ?: 0}\",\n" +
-                        "  \"distance\": \"${beacon.distance}\",\n" +
-                        "  \"proximity\": \"${BeaconScanData.getProximityOfBeacon(beacon).value}\",\n" +
-                        "  \"scanTime\": \"${System.currentTimeMillis()}\",\n" +
-                        "  \"rssi\": \"${beacon.rssi}\",\n" +
-                        "  \"txPower\": \"${beacon.txPower}\"\n" +
-                        "}"
-                    
+                val beaconJson = "{\n" +
+                    "  \"name\": \"${beacon.bluetoothName ?: "Unknown"}\",\n" +
+                    "  \"uuid\": \"${beacon.id1}\",\n" +
+                    "  \"macAddress\": \"${beacon.bluetoothAddress ?: "Unknown"}\",\n" +
+                    "  \"major\": \"${beacon.id2?.toInt() ?: 0}\",\n" +
+                    "  \"minor\": \"${beacon.id3?.toInt() ?: 0}\",\n" +
+                    "  \"distance\": \"${beacon.distance}\",\n" +
+                    "  \"proximity\": \"${BeaconScanData.getProximityOfBeacon(beacon).value}\",\n" +
+                    "  \"scanTime\": \"${System.currentTimeMillis()}\",\n" +
+                    "  \"rssi\": \"${beacon.rssi}\",\n" +
+                    "  \"txPower\": \"${beacon.txPower}\"\n" +
+                    "}"
+                
                     logDebug("Processing Beacon: $beaconJson")
-                    
-                    // Update beacon buffer with latest data
-                    val beaconKey = "${beacon.id1}-${beacon.id2}-${beacon.id3}"
+                
+                // Update beacon buffer with latest data
+                val beaconKey = "${beacon.id1}-${beacon.id2}-${beacon.id3}"
                     val beaconData = BeaconScanData(
-                        uuid = beacon.id1.toString(),
-                        name = beacon.bluetoothName ?: "Unknown",
-                        macAddress = beacon.bluetoothAddress ?: "Unknown",
-                        major = beacon.id2?.toInt() ?: 0,
-                        minor = beacon.id3?.toInt() ?: 0,
-                        distance = beacon.distance,
-                        txPower = beacon.txPower,
-                        proximity = BeaconScanData.getProximityOfBeacon(beacon).value,
-                        rssi = beacon.rssi,
-                        timestamp = System.currentTimeMillis(),
-                        latitude = null,
-                        longitude = null
-                    )
+                    uuid = beacon.id1.toString(),
+                    name = beacon.bluetoothName ?: "Unknown",
+                    macAddress = beacon.bluetoothAddress ?: "Unknown",
+                    major = beacon.id2?.toInt() ?: 0,
+                    minor = beacon.id3?.toInt() ?: 0,
+                    distance = beacon.distance,
+                    txPower = beacon.txPower,
+                    proximity = BeaconScanData.getProximityOfBeacon(beacon).value,
+                    rssi = beacon.rssi,
+                    timestamp = System.currentTimeMillis(),
+                    latitude = null,
+                    longitude = null
+                )
                     
                     beaconBuffer[beaconKey] = beaconData
                     logDebug("Added beacon to buffer - Key: $beaconKey, Buffer size: ${beaconBuffer.size}")
@@ -413,11 +415,13 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
                     )
 
                     try {
+                        sendNotifikasi("Beacon: (Major:${beaconData.major}), (Minor:${beaconData.minor})")
+
                         val response = RetrofitClient.apiService.submitBeacon(request)
-                        if (response.isSuccessful) {
+                        if (response.success) {
                             logDebug("{\"status\": \"upload_success\", \"beacon\": $beaconInfo, \"battery_level\": $batteryLevel}")
                         } else {
-                            logError("{\"status\": \"upload_failed\", \"beacon\": $beaconInfo, \"battery_level\": $batteryLevel, \"http_code\": \"${response.code()}\", \"error\": \"${response.errorBody()?.string()}\"}")
+                            logError("{\"status\": \"upload_failed\", \"beacon\": $beaconInfo, \"battery_level\": $batteryLevel, \"error\": \"${response.message}\"}")
                         }
                     } catch (e: Exception) {
                         logError("{\"status\": \"upload_exception\", \"beacon\": $beaconInfo, \"battery_level\": $batteryLevel, \"error\": \"${e.message}\"}")
@@ -469,6 +473,27 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
             logError("Error getting location", e)
             null
         }
+    }
+
+    private fun sendNotifikasi(pesan: String) {
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("Upload Lokasi")
+            .setContentText(pesan)
+            .setSmallIcon(R.drawable.uniguard_logo)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setContentIntent(
+                PendingIntent.getActivity(
+                    this,
+                    0,
+                    Intent(this, MainActivity::class.java),
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+            )
+            .build()
+
+        val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        manager.notify((System.currentTimeMillis() % 10000).toInt(), notification)
     }
 
     // MonitorNotifier implementation

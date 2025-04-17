@@ -127,11 +127,13 @@ class LocationUploadService : Service() {
                         timestamp = System.currentTimeMillis()
                     )
 
+                    sendNotifikasi("Lokasi: ${location.latitude}, ${location.longitude}")
+
                     val response = RetrofitClient.apiService.submitLocation(request)
-                    if (response.isSuccessful) {
+                    if (response.success) {
                         Log.i(TAG, "Location uploaded successfully")
                     } else {
-                        Log.e(TAG, "Failed to upload location: ${response.code()}")
+                        Log.e(TAG, "Failed to upload location: ${response.message}")
                     }
                 } else {
                     Log.e(TAG, "Failed to get location")
@@ -190,6 +192,28 @@ class LocationUploadService : Service() {
         uploadTimer = null
         stopForeground(true)
     }
+
+    private fun sendNotifikasi(pesan: String) {
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("Upload Lokasi")
+            .setContentText(pesan)
+            .setSmallIcon(R.drawable.uniguard_logo)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setContentIntent(
+                PendingIntent.getActivity(
+                    this,
+                    0,
+                    Intent(this, MainActivity::class.java),
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+            )
+            .build()
+
+        val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        manager.notify((System.currentTimeMillis() % 10000).toInt(), notification)
+    }
+
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.i(TAG, "onStartCommand called")
