@@ -1,7 +1,5 @@
 package com.uniguard.ugz_app
 
-import android.app.ActivityManager
-import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
@@ -17,23 +15,19 @@ class MainActivity: FlutterActivity() {
     private val TAG = "MainActivity"
 
     private fun isServiceRunning(serviceClass: Class<*>): Boolean {
-        val manager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        for (service in manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (serviceClass.name == service.service.className) {
-                return true
-            }
+        return when (serviceClass) {
+            LocationUploadService::class.java -> LocationUploadService.isRunning()
+            BeaconService::class.java -> BeaconService.isRunning()
+            else -> false
         }
-        return false
     }
 
     private fun startLocationUploadService(interval: Long) {
         if (isServiceRunning(LocationUploadService::class.java)) {
-            Log.i(TAG, "LocationUploadService is already running")
             return
         }
 
         if (interval <= 0) {
-            Log.e(TAG, "Invalid interval: $interval")
             return
         }
 
@@ -47,18 +41,15 @@ class MainActivity: FlutterActivity() {
             startService(intent)
         }
 
-        Log.i(TAG, "LocationUploadService started with interval: $interval ms")
     }
 
     private fun stopLocationUploadService() {
         if (!isServiceRunning(LocationUploadService::class.java)) {
-            Log.i(TAG, "LocationUploadService is not running")
             return
         }
 
         val intent = Intent(this, LocationUploadService::class.java)
         stopService(intent)
-        Log.i(TAG, "LocationUploadService stopped")
     }
 
     private fun initializeService(headers: Map<String, String>) {
@@ -88,13 +79,11 @@ class MainActivity: FlutterActivity() {
 
     private fun startBeaconService() {
         if (isServiceRunning(BeaconService::class.java)) {
-            Log.i(TAG, "BeaconService is already running")
             return
         }
 
         val intent = Intent(this, BeaconService::class.java)
         startService(intent)
-        Log.i(TAG, "BeaconService started")
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -114,19 +103,16 @@ class MainActivity: FlutterActivity() {
                     }
                     "stopBeaconService" -> {
                         if (!isServiceRunning(BeaconService::class.java)) {
-                            Log.i(TAG, "BeaconService is not running")
                             result.success(null)
                             return@setMethodCallHandler
                         }
 
                         val intent = Intent(this, BeaconService::class.java)
                         stopService(intent)
-                        Log.i(TAG, "BeaconService stopped")
                         result.success(null)
                     }
                     "isBeaconServiceRunning" -> {
                         val isRunning = isServiceRunning(BeaconService::class.java)
-                        Log.i(TAG, "BeaconService running status: $isRunning")
                         result.success(isRunning)
                     }
                     "startLocationUploadService" -> {
@@ -146,7 +132,6 @@ class MainActivity: FlutterActivity() {
                     }
                     "isLocationUploadServiceRunning" -> {
                         val isRunning = isServiceRunning(LocationUploadService::class.java)
-                        Log.i(TAG, "LocationUploadService running status: $isRunning")
                         result.success(isRunning)
                     }
                     else -> result.notImplemented()

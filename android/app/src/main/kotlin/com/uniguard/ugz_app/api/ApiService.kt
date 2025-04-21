@@ -1,6 +1,8 @@
 package com.uniguard.ugz_app.api
 
+import com.uniguard.ugz_app.api.data.BeaconRequest
 import com.uniguard.ugz_app.api.data.BeaconResponse
+import com.uniguard.ugz_app.api.data.LocationRequest
 import com.uniguard.ugz_app.api.data.LocationResponse
 import retrofit2.http.Body
 import retrofit2.http.POST

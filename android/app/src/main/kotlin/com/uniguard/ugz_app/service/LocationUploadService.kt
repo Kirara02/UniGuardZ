@@ -18,6 +18,7 @@ import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationToken
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.android.gms.tasks.OnTokenCanceledListener
+import com.uniguard.ugz_app.BuildConfig
 import com.uniguard.ugz_app.MainActivity
 import com.uniguard.ugz_app.R
 import com.uniguard.ugz_app.api.RetrofitClient
@@ -34,17 +35,30 @@ class LocationUploadService : Service() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var uploadTimer: Timer? = null
     private var uploadInterval: Long = 60000 // Default 1 minute
+    private var isServiceRunning = false
 
     companion object {
         private const val CHANNEL_ID = "LocationUploadServiceChannel"
         private const val NOTIFICATION_ID = 2
         private const val TAG = "LocationUploadService"
         const val EXTRA_INTERVAL = "upload_interval"
+
+        fun isRunning(): Boolean {
+            return instance?.isServiceRunning ?: false
+        }
+
+        private var instance: LocationUploadService? = null
+    }
+
+    private fun logDebug(message: String) {
+        if (BuildConfig.DEBUG) {
+            Log.d(TAG, message)
+        }
     }
 
     override fun onCreate() {
         super.onCreate()
-        Log.i(TAG, "LocationUploadService onCreate called")
+        instance = this
         createNotificationChannel()
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(applicationContext)
         
@@ -60,7 +74,7 @@ class LocationUploadService : Service() {
         ) == PackageManager.PERMISSION_GRANTED
 
         if (!hasFineLocation && !hasCoarseLocation) {
-            Log.e(TAG, "Location permissions not granted, stopping service")
+            logDebug("Location permissions not granted, stopping service")
             stopSelf()
             return
         }
@@ -94,8 +108,7 @@ class LocationUploadService : Service() {
         .build()
 
     private fun startLocationUpload() {
-        Log.i(TAG, "Starting location upload service with interval: $uploadInterval ms")
-        
+        isServiceRunning = true
         // Start foreground service
         startForeground(NOTIFICATION_ID, createNotification())
         
@@ -107,7 +120,7 @@ class LocationUploadService : Service() {
     private fun scheduleNextUpload() {
         uploadTimer?.schedule(object : TimerTask() {
             override fun run() {
-                Log.i(TAG, "Upload timer triggered")
+                logDebug("Upload timer triggered")
                 uploadLocation()
                 scheduleNextUpload()
             }
@@ -119,27 +132,24 @@ class LocationUploadService : Service() {
             try {
                 val location = getCurrentLocation()
                 if (location != null) {
-                    Log.i(TAG, "Got location: ${location.latitude}, ${location.longitude}")
                     
-                    val request = com.uniguard.ugz_app.api.LocationRequest.create(
+                    val request = com.uniguard.ugz_app.api.data.LocationRequest.create(
                         latitude = location.latitude,
                         longitude = location.longitude,
                         timestamp = System.currentTimeMillis()
                     )
 
-                    sendNotifikasi("Lokasi: ${location.latitude}, ${location.longitude}")
+//                    sendNotifikasi("Lokasi: ${location.latitude}, ${location.longitude}")
 
                     val response = RetrofitClient.apiService.submitLocation(request)
                     if (response.success) {
-                        Log.i(TAG, "Location uploaded successfully")
+                        logDebug("Location uploaded successfully")
                     } else {
-                        Log.e(TAG, "Failed to upload location: ${response.message}")
+                        logDebug("Failed to upload location: ${response.message}")
                     }
-                } else {
-                    Log.e(TAG, "Failed to get location")
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error uploading location: ${e.message}", e)
+                logDebug("Error uploading location: ${e.message}")
             }
         }
     }
@@ -158,7 +168,7 @@ class LocationUploadService : Service() {
             ) == PackageManager.PERMISSION_GRANTED
 
             if (!hasFineLocation && !hasCoarseLocation) {
-                Log.e(TAG, "Location permissions not granted")
+                logDebug("Location permissions not granted")
                 return null
             }
 
@@ -170,53 +180,55 @@ class LocationUploadService : Service() {
                 }
             ).await()
 
-            if (location != null) {
-                Log.i(TAG, "Location updated - accuracy: ${location.accuracy}, provider: ${location.provider}")
-            } else {
-                Log.e(TAG, "Failed to get current location")
-            }
-
             location
         } catch (e: SecurityException) {
-            Log.e(TAG, "SecurityException while getting location: ${e.message}", e)
+            logDebug("SecurityException while getting location: ${e.message}")
             null
         } catch (e: Exception) {
-            Log.e(TAG, "Error getting location: ${e.message}", e)
+            logDebug("Error getting location: ${e.message}")
             null
         }
     }
 
     private fun stopLocationUpload() {
-        Log.i(TAG, "Stopping location upload service")
+        isServiceRunning = false
         uploadTimer?.cancel()
         uploadTimer = null
-        stopForeground(true)
+        stopForegroundCompat()
     }
 
-    private fun sendNotifikasi(pesan: String) {
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Upload Lokasi")
-            .setContentText(pesan)
-            .setSmallIcon(R.drawable.uniguard_logo)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setAutoCancel(true)
-            .setContentIntent(
-                PendingIntent.getActivity(
-                    this,
-                    0,
-                    Intent(this, MainActivity::class.java),
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-            )
-            .build()
-
-        val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        manager.notify((System.currentTimeMillis() % 10000).toInt(), notification)
+    private fun stopForegroundCompat() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } else {
+            @Suppress("DEPRECATION")
+            stopForeground(true)
+        }
     }
+
+//    private fun sendNotification(message: String) {
+//        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+//            .setContentTitle("Upload Location")
+//            .setContentText(message)
+//            .setSmallIcon(R.drawable.uniguard_logo)
+//            .setPriority(NotificationCompat.PRIORITY_HIGH)
+//            .setAutoCancel(true)
+//            .setContentIntent(
+//                PendingIntent.getActivity(
+//                    this,
+//                    0,
+//                    Intent(this, MainActivity::class.java),
+//                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+//                )
+//            )
+//            .build()
+//
+//        val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+//        manager.notify((System.currentTimeMillis() % 10000).toInt(), notification)
+//    }
 
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.i(TAG, "onStartCommand called")
         
         intent?.let {
             // Get upload interval from intent
@@ -228,7 +240,9 @@ class LocationUploadService : Service() {
     }
 
     override fun onDestroy() {
-        Log.i(TAG, "Service is being destroyed")
+        isServiceRunning = false
+        instance = null
+        logDebug("Service is being destroyed")
         stopLocationUpload()
         super.onDestroy()
     }

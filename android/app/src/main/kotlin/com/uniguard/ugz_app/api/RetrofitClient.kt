@@ -31,8 +31,8 @@ object RetrofitClient {
             
             val request = builder.build()
             
-            // Log request details in release mode
-            if (!BuildConfig.DEBUG) {
+            // Log request details only in debug mode
+            if (BuildConfig.DEBUG) {
                 Log.d(TAG, "Request URL: ${request.url}")
                 Log.d(TAG, "Request Headers: ${request.headers}")
             }
@@ -43,19 +43,21 @@ object RetrofitClient {
             level = if (BuildConfig.DEBUG) {
                 HttpLoggingInterceptor.Level.BODY
             } else {
-                HttpLoggingInterceptor.Level.HEADERS
+                HttpLoggingInterceptor.Level.NONE
             }
         })
         .addInterceptor { chain ->
             try {
                 val response = chain.proceed(chain.request())
-                if (!BuildConfig.DEBUG) {
+                if (BuildConfig.DEBUG) {
                     Log.d(TAG, "Response Code: ${response.code}")
                     Log.d(TAG, "Response Headers: ${response.headers}")
                 }
                 response
             } catch (e: Exception) {
-                Log.e(TAG, "Network error: ${e.message}", e)
+                if (BuildConfig.DEBUG) {
+                    Log.e(TAG, "Network error: ${e.message}", e)
+                }
                 throw e
             }
         }
@@ -74,7 +76,7 @@ object RetrofitClient {
 
     fun updateHeaders(headers: Map<String, String>) {
         currentHeaders = headers
-        if (!BuildConfig.DEBUG) {
+        if (BuildConfig.DEBUG) {
             Log.d(TAG, "Headers updated: ${headers.keys}")
         }
     }

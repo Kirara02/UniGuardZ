@@ -11,14 +11,13 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.uniguard.ugz_app.MainActivity
 import com.uniguard.ugz_app.R
-import com.uniguard.ugz_app.api.BeaconData
+import com.uniguard.ugz_app.api.data.BeaconData
 import com.uniguard.ugz_app.api.RetrofitClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import org.altbeacon.beacon.*
-import java.util.concurrent.atomic.AtomicInteger
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
@@ -33,24 +32,21 @@ import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.android.gms.tasks.OnTokenCanceledListener
 import com.uniguard.ugz_app.utils.BeaconBatteryReader
 import com.uniguard.ugz_app.BuildConfig
-import com.uniguard.ugz_app.service.LocationUploadService.Companion
+import com.uniguard.ugz_app.api.data.BeaconRequest
 import com.uniguard.ugz_app.utils.BeaconScanData
-import org.altbeacon.beacon.service.BeaconService
 import org.altbeacon.beacon.service.RunningAverageRssiFilter
 
 class BeaconService : Service(), RangeNotifier, MonitorNotifier {
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var isScanning = false
-    private val notificationId = AtomicInteger(0)
     private lateinit var beaconManager: BeaconManager
-    private var headers: Map<String, String> = emptyMap()
-    private val scannedBeacons = mutableMapOf<String, BeaconScanData>()
     private var beaconBuffer = mutableMapOf<String, BeaconScanData>()
     private var uploadTimer: Timer? = null
     private val UPLOAD_INTERVAL = 60000L // 1 minute in milliseconds
     private val SCAN_INTERVAL = 1100L // 1.1 seconds in milliseconds
     private lateinit var batteryReader: BeaconBatteryReader
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private var isServiceRunning = false
 
     companion object {
         private const val CHANNEL_ID = "BeaconServiceChannel"
@@ -60,10 +56,6 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
         private fun logDebug(message: String) {
             if (BuildConfig.DEBUG) {
                 Log.d(TAG, message)
-            } else {
-                // In release mode, we can use a different logging mechanism
-                // or write to a file if needed
-                Log.i(TAG, message) // Using INFO level for release
             }
         }
         
@@ -74,22 +66,20 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
                 } else {
                     Log.e(TAG, message)
                 }
-            } else {
-                // In release mode, we can use a different logging mechanism
-                // or write to a file if needed
-                if (e != null) {
-                    Log.w(TAG, "$message - ${e.message}") // Using WARN level for release
-                } else {
-                    Log.w(TAG, message)
-                }
             }
         }
+
+        fun isRunning(): Boolean {
+            return instance?.isServiceRunning ?: false
+        }
+
+        private var instance: BeaconService? = null
     }
 
     override fun onCreate() {
         super.onCreate()
+        instance = this
         try {
-        logDebug("BeaconService onCreate called")
         createNotificationChannel()
             
             // Check for required permissions based on Android version
@@ -109,9 +99,7 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
-            
-            logDebug("Permissions check - Bluetooth: $hasBluetoothPermission, Location: $hasLocationPermission")
-            
+
             if (!hasBluetoothPermission || !hasLocationPermission) {
                 logError("Missing required permissions - Bluetooth: $hasBluetoothPermission, Location: $hasLocationPermission")
                 stopSelf()
@@ -144,15 +132,12 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
         beaconManager.beaconParsers.add(BeaconParser().setBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24"))
         beaconManager.beaconParsers.add(BeaconParser().setBeaconLayout("m:2-3=beac,i:4-19,i:20-21,i:22-23,p:24-24,d:25-25"))
         
-            // Add notifiers
-            beaconManager.removeRangeNotifier(this)
-            beaconManager.removeMonitorNotifier(this)
+        // Add notifiers
+        beaconManager.removeRangeNotifier(this)
+        beaconManager.removeMonitorNotifier(this)
         beaconManager.addRangeNotifier(this)
         beaconManager.addMonitorNotifier(this)
-        
-            logDebug("BeaconManager initialized with parsers: ${beaconManager.beaconParsers.size}")
-        logDebug("Scan intervals set - ForegroundScanPeriod: $SCAN_INTERVAL, BetweenScanPeriod: 0")
-        
+
         // Start scanning immediately
         startBeaconService()
         } catch (e: Exception) {
@@ -188,22 +173,6 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
         )
         .build()
 
-    private fun initialize(headers: Map<String, String>) {
-        this.headers = headers
-        
-        // Add Bearer prefix to Authorization header if it exists
-        val updatedHeaders = headers.toMutableMap()
-        headers["Authorization"]?.let { authHeader ->
-            if (!authHeader.startsWith("Bearer ")) {
-                updatedHeaders["Authorization"] = "Bearer $authHeader"
-            }
-        }
-        
-        // Update Retrofit client with updated headers
-        RetrofitClient.updateHeaders(updatedHeaders)
-        
-        logDebug("BeaconService initialized with headers")
-    }
 
     private fun stopForegroundCompat() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -256,24 +225,19 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
 
     private fun stopBeaconService() {
         if (isScanning) {
-            logDebug("Attempting to stop beacon service...")
             isScanning = false
             try {
                 beaconManager.stopRangingBeacons(Region("all-beacons-region", null, null, null))
                 stopUploadTimer()
                 beaconBuffer.clear()
                 stopForegroundCompat()
-                logDebug("Beacon service stopped successfully")
             } catch (e: Exception) {
                 logError("Error stopping beacon service", e)
             }
-        } else {
-            logDebug("Beacon service is already stopped")
         }
     }
 
     private fun startUploadTimer() {
-        logDebug("Starting upload timer with interval: $UPLOAD_INTERVAL ms")
         uploadTimer = Timer()
         scheduleNextUpload()
     }
@@ -281,7 +245,6 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
     private fun scheduleNextUpload() {
         uploadTimer?.schedule(object : TimerTask() {
             override fun run() {
-                logDebug("Upload timer triggered at ${System.currentTimeMillis()}")
                 // Only upload if there are beacons in the buffer
                 if (beaconBuffer.isNotEmpty()) {
                     logDebug("{\"status\": \"upload_scheduled\", \"beacon_count\": \"${beaconBuffer.size}\"}")
@@ -301,13 +264,10 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
 
     // RangeNotifier implementation
     override fun didRangeBeaconsInRegion(beacons: Collection<Beacon>, region: Region) {
-        logDebug("didRangeBeaconsInRegion called - isScanning: $isScanning, beacons count: ${beacons.size}")
         if (!isScanning) {
-            logDebug("Not scanning, returning")
             return
         }
 
-        // Process all detected beacons without UUID validation
         if (beacons.isNotEmpty()) {
             beacons.forEach { beacon ->
                 try {
@@ -357,7 +317,6 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
 
     private fun uploadBufferedBeacons() {
         if (beaconBuffer.isEmpty()) {
-            logDebug("{\"status\": \"no_beacons_to_upload\", \"buffer_empty\": \"true\"}")
             return
         }
 
@@ -369,8 +328,6 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
                     logError("{\"status\": \"location_error\", \"error\": \"Failed to get current location\"}")
                     return@launch
                 }
-
-                logDebug("{\"status\": \"starting_upload\", \"beacon_count\": \"${beaconBuffer.size}\", \"location\": {\"latitude\": \"${location.latitude}\", \"longitude\": \"${location.longitude}\"}}")
 
                 // Upload all beacons in the buffer
                 beaconBuffer.values.forEach { beaconData ->
@@ -402,7 +359,7 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
                         0
                     }
                     
-                    val request = com.uniguard.ugz_app.api.BeaconRequest.create(
+                    val request = BeaconRequest.create(
                         type = "beacon",
                         latitude = location.latitude,
                         longitude = location.longitude,
@@ -415,7 +372,7 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
                     )
 
                     try {
-                        sendNotifikasi("Beacon: (Major:${beaconData.major}), (Minor:${beaconData.minor})")
+//                        sendNotification("Beacon: (Major:${beaconData.major}), (Minor:${beaconData.minor})")
 
                         val response = RetrofitClient.apiService.submitBeacon(request)
                         if (response.success) {
@@ -462,12 +419,6 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
                 }
             ).await()
 
-            if (location != null) {
-                logDebug("{\"status\": \"location_updated\", \"accuracy\": \"${location.accuracy}\", \"provider\": \"${location.provider}\"}")
-            } else {
-                logError("{\"status\": \"location_error\", \"error\": \"Failed to get current location\"}")
-            }
-
             location
         } catch (e: Exception) {
             logError("Error getting location", e)
@@ -475,26 +426,26 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
         }
     }
 
-    private fun sendNotifikasi(pesan: String) {
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Upload Lokasi")
-            .setContentText(pesan)
-            .setSmallIcon(R.drawable.uniguard_logo)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setAutoCancel(true)
-            .setContentIntent(
-                PendingIntent.getActivity(
-                    this,
-                    0,
-                    Intent(this, MainActivity::class.java),
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-            )
-            .build()
-
-        val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        manager.notify((System.currentTimeMillis() % 10000).toInt(), notification)
-    }
+//    private fun sendNotification(message: String) {
+//        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+//            .setContentTitle("Upload Beacon")
+//            .setContentText(message)
+//            .setSmallIcon(R.drawable.uniguard_logo)
+//            .setPriority(NotificationCompat.PRIORITY_HIGH)
+//            .setAutoCancel(true)
+//            .setContentIntent(
+//                PendingIntent.getActivity(
+//                    this,
+//                    0,
+//                    Intent(this, MainActivity::class.java),
+//                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+//                )
+//            )
+//            .build()
+//
+//        val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+//        manager.notify((System.currentTimeMillis() % 10000).toInt(), notification)
+//    }
 
     // MonitorNotifier implementation
     override fun didEnterRegion(region: Region) {
@@ -512,12 +463,14 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.i(TAG, "onStartCommand called")
+        isServiceRunning = true
         startBeaconService()
         return START_STICKY
     }
 
     override fun onDestroy() {
+        isServiceRunning = false
+        instance = null
         logDebug("Service is being destroyed")
         stopBeaconService()
         beaconManager.removeRangeNotifier(this)
