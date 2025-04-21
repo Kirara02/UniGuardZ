@@ -123,10 +123,6 @@ class _FormScreenState extends ConsumerState<FormScreen>
               return const Center(child: CircularProgressIndicator());
             }
 
-            if (formState.error != null) {
-              return Center(child: Text("Error: ${formState.error}"));
-            }
-
             final form = formState.form;
             if (form == null) {
               return const Center(child: Text("Form not found"));

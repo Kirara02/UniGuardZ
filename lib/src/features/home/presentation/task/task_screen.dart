@@ -122,10 +122,6 @@ class _TaskScreenState extends ConsumerState<TaskScreen>
               return const Center(child: CircularProgressIndicator());
             }
 
-            if (taskState.error != null) {
-              return Center(child: Text("Error: ${taskState.error}"));
-            }
-
             final task = taskState.task;
             if (task == null) {
               return const Center(child: Text("Task not found"));
@@ -263,32 +259,24 @@ class _TaskScreenState extends ConsumerState<TaskScreen>
   }
 
   String? _validateRequiredFields(TaskModel task) {
-    print("check validation");
     for (var field in task.fields) {
       final fieldId = field.id;
       final fieldName = field.taskFieldName;
       final fieldTypeId = field.fieldTypeId;
       final value = formValues[fieldId];
 
-      print("Field: $fieldName");
-      print("Type: $fieldTypeId");
-      print("Value: $value");
-
       // All task fields are required by default
       if (value == null || value.toString().trim().isEmpty) {
         // Special validation for image fields
         if (fieldTypeId == "4") {
-          print("Image validation failed for: $fieldName");
           return "Image for '$fieldName' is required";
         }
         // Special validation for signature fields
         else if (fieldTypeId == "5") {
-          print("Signature validation failed for: $fieldName");
           return "Signature for '$fieldName' is required";
         }
         // Validation for other fields
         else {
-          print("Field validation failed for: $fieldName");
           return "Field '$fieldName' is required";
         }
       }

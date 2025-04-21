@@ -49,7 +49,7 @@ class SubmitActivity implements UseCase<Result<String>, SubmitActivityParams> {
     if (response.success) {
       return Result.success(response.message);
     }
-    return Result.failed(response.message);
+    return Result.failed(response.message, code: response.error?.code);
   }
 }
 

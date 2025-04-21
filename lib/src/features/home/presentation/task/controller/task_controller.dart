@@ -8,6 +8,7 @@ import 'package:ugz_app/src/local/record/task_submit_record.dart';
 import 'package:ugz_app/src/local/usecases/insert_pending_task/insert_pending_task.dart';
 import 'package:ugz_app/src/local/usecases/insert_pending_task/insert_pending_task_params.dart';
 import 'package:ugz_app/src/utils/misc/result.dart';
+import 'package:ugz_app/src/utils/network/connectivity.dart';
 
 part 'task_controller.g.dart';
 
@@ -66,6 +67,39 @@ class TaskController extends _$TaskController {
       }
     } catch (e) {
       state = state.copyWith(error: e.toString(), isLoading: false);
+    }
+  }
+
+  Future<(bool, String?, int?)> submitToApi({
+    required String id,
+    required double latitude,
+    required double longitude,
+    required String timestamp,
+    required List<TaskField> fields,
+    required List<TaskPhoto> photos,
+  }) async {
+    final submitTaskUseCase = ref.read(submitTaskProvider);
+
+    try {
+      final result = await submitTaskUseCase(
+        SubmitTaskParams(
+          id: id,
+          latitude: latitude,
+          longitude: longitude,
+          timestamp: timestamp,
+          fields: fields,
+          photos: photos,
+        ),
+      );
+
+      switch (result) {
+        case Success(value: _):
+          return (true, null, null);
+        case Failed(message: final message, code: final code):
+          return (false, message, code);
+      }
+    } catch (e) {
+      return (false, e.toString(), null);
     }
   }
 
@@ -147,7 +181,7 @@ class TaskController extends _$TaskController {
           id: e.id.toString(),
           fieldTypeId: e.typeId!,
           fieldTypeName: "signature",
-          taskFieldName: "Signature ${e.id}",
+          taskFieldName: e.inputName!,
           value: "file_${e.id}",
         ),
       ),
@@ -167,20 +201,54 @@ class TaskController extends _$TaskController {
     );
 
     try {
-      // Try submitting to API
-      final success = await submitToApi(
-        id: formId,
-        latitude: latitude ?? 0.0,
-        longitude: longitude ?? 0.0,
-        timestamp: timestamp,
-        fields: fields,
-        photos: photos,
-      );
+      // Check internet connectivity
+      final bool isConnected = await NetworkConnectivity.isConnected();
 
-      if (success) {
-        state = state.copyWith(isSubmitting: false, isSubmitSuccess: true);
+      if (isConnected) {
+        // Try submitting to API
+        final (success, error, errorCode) = await submitToApi(
+          id: formId,
+          latitude: latitude ?? 0.0,
+          longitude: longitude ?? 0.0,
+          timestamp: timestamp,
+          fields: fields,
+          photos: photos,
+        );
+
+        if (success) {
+          state = state.copyWith(isSubmitting: false, isSubmitSuccess: true);
+          return;
+        } else {
+          // Only store in local DB if it's a network error (5xx) or server error
+          if (errorCode != null && errorCode >= 500) {
+            await insertTask(
+              params: InsertPendingTaskParams(
+                record: TaskSubmitRecord(
+                  formId: formId,
+                  partitionKey: partitionKey,
+                  timestamp: timestamp,
+                  latitude: latitude,
+                  longitude: longitude,
+                  description: description,
+                  data: data,
+                ),
+              ),
+            );
+            state = state.copyWith(
+              isSubmitting: false,
+              isSubmitSuccess: true,
+              error:
+                  error ??
+                  "Failed to submit to server. Data saved locally and will be synced when connection is restored.",
+            );
+          } else {
+            // For validation errors (400, 422, etc), show the error message without saving to local DB
+            state = state.copyWith(isSubmitting: false, error: error);
+          }
+          return;
+        }
       } else {
-        // If API fails, store in local DB
+        // No internet connection, store in local DB
         await insertTask(
           params: InsertPendingTaskParams(
             record: TaskSubmitRecord(
@@ -194,7 +262,13 @@ class TaskController extends _$TaskController {
             ),
           ),
         );
-        state = state.copyWith(isSubmitting: false, isSubmitSuccess: true);
+        state = state.copyWith(
+          isSubmitting: false,
+          isSubmitSuccess: true,
+          error:
+              "No internet connection. Data saved locally and will be synced when connection is restored.",
+        );
+        return;
       }
     } catch (e) {
       // On error, store in local DB
@@ -212,11 +286,16 @@ class TaskController extends _$TaskController {
             ),
           ),
         );
-        state = state.copyWith(isSubmitting: false, isSubmitSuccess: true);
+        state = state.copyWith(
+          isSubmitting: false,
+          isSubmitSuccess: true,
+          error:
+              "Error occurred. Data saved locally and will be synced when connection is restored.",
+        );
       } catch (innerError) {
         state = state.copyWith(
           isSubmitting: false,
-          error: "Failed to submit: $innerError",
+          error: "Failed to save data: $innerError",
         );
       }
     }
@@ -225,39 +304,6 @@ class TaskController extends _$TaskController {
   Future<void> insertTask({required InsertPendingTaskParams params}) async {
     final insert = ref.read(dbInsertPendingTaskProvider);
     await insert(params);
-  }
-
-  Future<bool> submitToApi({
-    required String id,
-    required double latitude,
-    required double longitude,
-    required String timestamp,
-    required List<TaskField> fields,
-    required List<TaskPhoto> photos,
-  }) async {
-    final submitTaskUseCase = ref.read(submitTaskProvider);
-
-    try {
-      final result = await submitTaskUseCase(
-        SubmitTaskParams(
-          id: id,
-          latitude: latitude,
-          longitude: longitude,
-          timestamp: timestamp,
-          fields: fields,
-          photos: photos,
-        ),
-      );
-
-      switch (result) {
-        case Success(value: _):
-          return true;
-        case Failed(message: _):
-          return false;
-      }
-    } catch (e) {
-      return false;
-    }
   }
 
   void setSubmitting(bool isSubmitting) {

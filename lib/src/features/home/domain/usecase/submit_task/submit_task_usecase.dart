@@ -40,7 +40,7 @@ class SubmitTask implements UseCase<Result<String>, SubmitTaskParams> {
       if (response.success && response.data != null) {
         return Result.success(response.message);
       }
-      return Result.failed(response.message);
+      return Result.failed(response.message, code: response.error?.code);
     } catch (e) {
       throw Exception("Failed to submit task: $e");
     }

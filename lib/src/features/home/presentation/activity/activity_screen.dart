@@ -112,10 +112,6 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
               return const Center(child: CircularProgressIndicator());
             }
 
-            if (activityState.error != null) {
-              return Center(child: Text("Error: ${activityState.error}"));
-            }
-
             final activity = activityState.activity;
             if (activity == null) {
               return const Center(child: Text("Activity not found"));

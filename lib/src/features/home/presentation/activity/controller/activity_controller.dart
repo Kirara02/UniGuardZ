@@ -10,6 +10,7 @@ import 'package:ugz_app/src/local/record/form_data.dart';
 import 'package:ugz_app/src/local/usecases/insert_pending_activity/insert_pending_activity.dart';
 import 'package:ugz_app/src/local/usecases/insert_pending_activity/insert_pending_activity_params.dart';
 import 'package:ugz_app/src/utils/misc/result.dart';
+import 'package:ugz_app/src/utils/network/connectivity.dart';
 
 part 'activity_controller.g.dart';
 
@@ -71,69 +72,7 @@ class ActivityController extends _$ActivityController {
     }
   }
 
-  Future<void> submit({
-    required String partitionKey,
-    required String timestamp,
-    required double? latitude,
-    required double? longitude,
-    required String description,
-    required String formId,
-    required FormData data,
-  }) async {
-    state = state.copyWith(isSubmitting: true, error: null);
-
-    try {
-      final String? comment =
-          data.comments.isNotEmpty ? data.comments.first.value : null;
-      final String? photoPath =
-          data.photos.isNotEmpty ? data.photos.first.value : null;
-
-      final success = await _submitToApi(
-        id: formId,
-        latitude: latitude ?? 0.0,
-        longitude: longitude ?? 0.0,
-        timestamp: timestamp,
-        comment: comment,
-        photoPath: photoPath,
-      );
-
-      if (!success) {
-        await _insertToLocalDb(
-          params: InsertPendingActivityParams(
-            record: ActivityLogSubmitRecord(
-              formId: formId,
-              partitionKey: partitionKey,
-              timestamp: timestamp,
-              latitude: latitude,
-              longitude: longitude,
-              description: description,
-              data: data,
-            ),
-          ),
-        );
-      }
-
-      state = state.copyWith(isSubmitting: false, isSubmitSuccess: true);
-    } catch (e) {
-      await _insertToLocalDb(
-        params: InsertPendingActivityParams(
-          record: ActivityLogSubmitRecord(
-            formId: formId,
-            partitionKey: partitionKey,
-            timestamp: timestamp,
-            latitude: latitude,
-            longitude: longitude,
-            description: description,
-            data: data,
-          ),
-        ),
-      );
-
-      state = state.copyWith(isSubmitting: false, error: e.toString());
-    }
-  }
-
-  Future<bool> _submitToApi({
+  Future<(bool, String?, int?)> _submitToApi({
     required String id,
     required double latitude,
     required double longitude,
@@ -155,12 +94,128 @@ class ActivityController extends _$ActivityController {
       );
       switch (result) {
         case Success(value: _):
-          return true;
-        case Failed(message: _):
-          return false;
+          return (true, null, null);
+        case Failed(message: final message, code: final code):
+          return (false, message, code);
       }
-    } catch (_) {
-      return false;
+    } catch (e) {
+      return (false, e.toString(), null);
+    }
+  }
+
+  Future<void> submit({
+    required String partitionKey,
+    required String timestamp,
+    required double? latitude,
+    required double? longitude,
+    required String description,
+    required String formId,
+    required FormData data,
+  }) async {
+    state = state.copyWith(isSubmitting: true, error: null);
+
+    try {
+      final String? comment =
+          data.comments.isNotEmpty ? data.comments.first.value : null;
+      final String? photoPath =
+          data.photos.isNotEmpty ? data.photos.first.value : null;
+
+      // Check internet connectivity
+      final bool isConnected = await NetworkConnectivity.isConnected();
+
+      if (isConnected) {
+        final (success, error, errorCode) = await _submitToApi(
+          id: formId,
+          latitude: latitude ?? 0.0,
+          longitude: longitude ?? 0.0,
+          timestamp: timestamp,
+          comment: comment,
+          photoPath: photoPath,
+        );
+
+        if (success) {
+          state = state.copyWith(isSubmitting: false, isSubmitSuccess: true);
+          return;
+        } else {
+          // Only store in local DB if it's a network error (5xx) or server error
+          if (errorCode != null && errorCode >= 500) {
+            await _insertToLocalDb(
+              params: InsertPendingActivityParams(
+                record: ActivityLogSubmitRecord(
+                  formId: formId,
+                  partitionKey: partitionKey,
+                  timestamp: timestamp,
+                  latitude: latitude,
+                  longitude: longitude,
+                  description: description,
+                  data: data,
+                ),
+              ),
+            );
+            state = state.copyWith(
+              isSubmitting: false,
+              isSubmitSuccess: true,
+              error:
+                  error ??
+                  "Failed to submit to server. Data saved locally and will be synced when connection is restored.",
+            );
+          } else {
+            // For validation errors (400, 422, etc), show the error message without saving to local DB
+            state = state.copyWith(isSubmitting: false, error: error);
+          }
+          return;
+        }
+      } else {
+        // No internet connection, store in local DB
+        await _insertToLocalDb(
+          params: InsertPendingActivityParams(
+            record: ActivityLogSubmitRecord(
+              formId: formId,
+              partitionKey: partitionKey,
+              timestamp: timestamp,
+              latitude: latitude,
+              longitude: longitude,
+              description: description,
+              data: data,
+            ),
+          ),
+        );
+        state = state.copyWith(
+          isSubmitting: false,
+          isSubmitSuccess: true,
+          error:
+              "No internet connection. Data saved locally and will be synced when connection is restored.",
+        );
+        return;
+      }
+    } catch (e) {
+      // On error, store in local DB
+      try {
+        await _insertToLocalDb(
+          params: InsertPendingActivityParams(
+            record: ActivityLogSubmitRecord(
+              formId: formId,
+              partitionKey: partitionKey,
+              timestamp: timestamp,
+              latitude: latitude,
+              longitude: longitude,
+              description: description,
+              data: data,
+            ),
+          ),
+        );
+        state = state.copyWith(
+          isSubmitting: false,
+          isSubmitSuccess: true,
+          error:
+              "Error occurred. Data saved locally and will be synced when connection is restored.",
+        );
+      } catch (innerError) {
+        state = state.copyWith(
+          isSubmitting: false,
+          error: "Failed to save data: $innerError",
+        );
+      }
     }
   }
 
