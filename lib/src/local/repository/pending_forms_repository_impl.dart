@@ -50,7 +50,7 @@ class PendingFormsRepositoryImpl implements PendingFormsRepository {
     final model = PendingFormsModel(
       id: 0,
       partitionKey: record.partitionKey,
-      timestamp: DateTime.parse(record.timestamp),
+      timestamp: record.timestamp,
       latitude: record.latitude,
       longitude: record.longitude,
       category: PendingFormCategory.activity.value,
@@ -69,7 +69,7 @@ class PendingFormsRepositoryImpl implements PendingFormsRepository {
     final model = PendingFormsModel(
       id: 0,
       partitionKey: record.partitionKey,
-      timestamp: DateTime.parse(record.timestamp),
+      timestamp: record.timestamp,
       latitude: record.latitude,
       longitude: record.longitude,
       category: PendingFormCategory.forms.value,
@@ -88,7 +88,7 @@ class PendingFormsRepositoryImpl implements PendingFormsRepository {
     final model = PendingFormsModel(
       id: 0,
       partitionKey: record.partitionKey,
-      timestamp: DateTime.parse(record.timestamp),
+      timestamp: record.timestamp,
       latitude: record.latitude,
       longitude: record.longitude,
       category: PendingFormCategory.tasks.value,
@@ -124,5 +124,5 @@ class PendingFormsRepositoryImpl implements PendingFormsRepository {
 }
 
 @riverpod
-PendingFormsRepository pendingFormsRepository(PendingFormsRepositoryRef ref) =>
+PendingFormsRepository pendingFormsRepository(ref) =>
     PendingFormsRepositoryImpl(db: ref.watch(appDatabaseProvider));

@@ -23,7 +23,7 @@ class SubmitActivity implements UseCase<Result<String>, SubmitActivityParams> {
       if (params.latitude != null) "latitude": params.latitude,
       if (params.longitude != null) "longitude": params.longitude,
       if (params.comment != null) "comment": params.comment,
-      "original_submitted_time": params.timestamp.toIso8601String(),
+      "original_submitted_time": params.timestamp,
     };
 
     if (params.photo != null && params.photo!.path.isNotEmpty) {

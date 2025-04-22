@@ -52,6 +52,7 @@ class HistoryPendingSection extends ConsumerWidget {
                   }
 
                   return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "Long press for delete item!",
@@ -60,91 +61,96 @@ class HistoryPendingSection extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      RefreshIndicator(
-                        onRefresh:
-                            () => ref.refresh(historyPendingProvider.future),
-                        child: ListView.separated(
-                          itemCount: pendingForms.length,
-                          padding: const EdgeInsets.fromLTRB(0, 12, 0, 20),
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          separatorBuilder:
-                              (context, index) => const SizedBox(height: 12),
-                          itemBuilder: (context, index) {
-                            final form = pendingForms[index];
-                            printIfDebug(form.toJson());
+                      Expanded(
+                        child: RefreshIndicator(
+                          onRefresh:
+                              () => ref.refresh(historyPendingProvider.future),
+                          child: ListView.separated(
+                            itemCount: pendingForms.length,
+                            padding: const EdgeInsets.fromLTRB(0, 12, 0, 20),
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            separatorBuilder:
+                                (context, index) => const SizedBox(height: 12),
+                            itemBuilder: (context, index) {
+                              final form = pendingForms[index];
+                              printIfDebug(form.toJson());
 
-                            final iconPath =
-                                form.category == 1
-                                    ? Assets.icons.file.path
-                                    : form.category == 2
-                                    ? Assets.icons.checklist.path
-                                    : Assets.icons.guard.path;
+                              final iconPath =
+                                  form.category == 1
+                                      ? Assets.icons.file.path
+                                      : form.category == 2
+                                      ? Assets.icons.checklist.path
+                                      : Assets.icons.guard.path;
 
-                            final isUploading =
-                                uploadingState.isUploading &&
-                                uploadingState.currentItemId == form.id;
+                              final isUploading =
+                                  uploadingState.isUploading &&
+                                  uploadingState.currentItemId == form.id;
 
-                            final isSelected = ref
-                                .watch(pendingFormsSelectionProvider)
-                                .contains(form.id);
+                              final isSelected = ref
+                                  .watch(pendingFormsSelectionProvider)
+                                  .contains(form.id);
 
-                            return ListItem(
-                              title: form.description,
-                              subtitle: DateFormat(
-                                'dd MMM yyyy, hh:mm a',
-                              ).format(form.timestamp.toLocal()),
-                              prefixIconPath: iconPath,
-                              suffix:
-                                  isSelectionMode
-                                      ? Checkbox(
-                                        value: isSelected,
-                                        onChanged: (value) {
-                                          ref
-                                              .read(
-                                                pendingFormsSelectionProvider
-                                                    .notifier,
-                                              )
-                                              .toggleSelection(form.id);
-                                        },
-                                      )
-                                      : isUploading
-                                      ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
+                              return ListItem(
+                                title: form.description,
+                                subtitle: DateFormat(
+                                  'dd MMM yyyy, hh:mm a',
+                                ).format(
+                                  DateTime.parse(form.timestamp).toLocal(),
+                                ),
+                                prefixIconPath: iconPath,
+                                suffix:
+                                    isSelectionMode
+                                        ? Checkbox(
+                                          value: isSelected,
+                                          onChanged: (value) {
+                                            ref
+                                                .read(
+                                                  pendingFormsSelectionProvider
+                                                      .notifier,
+                                                )
+                                                .toggleSelection(form.id);
+                                          },
+                                        )
+                                        : isUploading
+                                        ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                        : IconButton(
+                                          icon: const Icon(Icons.upload),
+                                          onPressed:
+                                              () => _retryUpload(
+                                                context,
+                                                ref,
+                                                form,
+                                              ),
                                         ),
+                                onPressed:
+                                    isSelectionMode
+                                        ? () => ref
+                                            .read(
+                                              pendingFormsSelectionProvider
+                                                  .notifier,
+                                            )
+                                            .toggleSelection(form.id)
+                                        : () => HistoryDetailRoute(
+                                          historyId: form.formId,
+                                          historyType:
+                                              HistoryType.pending.value,
+                                        ).push(context),
+                                onLongPress: () {
+                                  ref
+                                      .read(
+                                        pendingFormsSelectionProvider.notifier,
                                       )
-                                      : IconButton(
-                                        icon: const Icon(Icons.upload),
-                                        onPressed:
-                                            () => _retryUpload(
-                                              context,
-                                              ref,
-                                              form,
-                                            ),
-                                      ),
-                              onPressed:
-                                  isSelectionMode
-                                      ? () => ref
-                                          .read(
-                                            pendingFormsSelectionProvider
-                                                .notifier,
-                                          )
-                                          .toggleSelection(form.id)
-                                      : () => HistoryDetailRoute(
-                                        historyId: form.formId,
-                                        historyType: HistoryType.pending.value,
-                                      ).push(context),
-                              onLongPress: () {
-                                ref
-                                    .read(
-                                      pendingFormsSelectionProvider.notifier,
-                                    )
-                                    .toggleSelection(form.id);
-                              },
-                            );
-                          },
+                                      .toggleSelection(form.id);
+                                },
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ],

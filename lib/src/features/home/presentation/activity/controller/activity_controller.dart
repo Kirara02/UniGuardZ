@@ -89,7 +89,7 @@ class ActivityController extends _$ActivityController {
           longitude: longitude,
           comment: comment,
           photo: photoPath != null ? File(photoPath) : null,
-          timestamp: DateTime.now(),
+          timestamp: timestamp,
         ),
       );
       switch (result) {

@@ -1,7 +1,7 @@
 class PendingFormsModel {
   final int id;
   final String partitionKey;
-  final DateTime timestamp;
+  final String timestamp;
   final double? latitude;
   final double? longitude;
   final String description;
@@ -26,8 +26,7 @@ class PendingFormsModel {
     return {
       'id': id,
       'partitionKey': partitionKey,
-      'timestamp':
-          timestamp.toIso8601String(), // Convert DateTime to ISO string
+      'timestamp': timestamp,
       'latitude': latitude,
       'longitude': longitude,
       'description': description,
@@ -42,7 +41,7 @@ class PendingFormsModel {
     return PendingFormsModel(
       id: json['id'] as int,
       partitionKey: json['partitionKey'] as String,
-      timestamp: DateTime.parse(json['timestamp'] as String),
+      timestamp: json['timestamp'] as String,
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
       description: json['description'] as String,

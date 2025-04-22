@@ -203,7 +203,7 @@ class RetryUpload extends _$RetryUpload {
         id: form.formId.toString(),
         longitude: form.longitude ?? 0,
         latitude: form.latitude ?? 0,
-        timestamp: form.timestamp.toIso8601String(),
+        timestamp: form.timestamp,
         fields: fields,
         photos: photos,
       );
@@ -231,7 +231,7 @@ class RetryUpload extends _$RetryUpload {
         id: form.formId.toString(),
         longitude: form.longitude ?? 0,
         latitude: form.latitude ?? 0,
-        timestamp: form.timestamp.toIso8601String(),
+        timestamp: form.timestamp,
         fields: fields,
         photos: photos,
       );

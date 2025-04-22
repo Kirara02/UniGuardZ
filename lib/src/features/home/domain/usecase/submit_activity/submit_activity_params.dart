@@ -6,7 +6,7 @@ class SubmitActivityParams {
   final double? longitude;
   final String? comment;
   final File? photo;
-  final DateTime timestamp;
+  final String timestamp;
 
   SubmitActivityParams({
     required this.id,
