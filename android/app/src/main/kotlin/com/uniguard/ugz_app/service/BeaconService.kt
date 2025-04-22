@@ -35,11 +35,12 @@ import com.uniguard.ugz_app.BuildConfig
 import com.uniguard.ugz_app.api.data.BeaconRequest
 import com.uniguard.ugz_app.utils.BeaconScanData
 import org.altbeacon.beacon.service.RunningAverageRssiFilter
+import com.uniguard.ugz_app.utils.ServiceChecker
 
 class BeaconService : Service(), RangeNotifier, MonitorNotifier {
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var isScanning = false
-    private lateinit var beaconManager: BeaconManager
+    private var beaconManager: BeaconManager? = null
     private var beaconBuffer = mutableMapOf<String, BeaconScanData>()
     private var uploadTimer: Timer? = null
     private val UPLOAD_INTERVAL = 60000L // 1 minute in milliseconds
@@ -47,6 +48,7 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
     private lateinit var batteryReader: BeaconBatteryReader
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var isServiceRunning = false
+    private lateinit var serviceChecker: ServiceChecker
 
     companion object {
         private const val CHANNEL_ID = "BeaconServiceChannel"
@@ -80,40 +82,26 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
         super.onCreate()
         instance = this
         try {
-        createNotificationChannel()
+            createNotificationChannel()
             
-            // Check for required permissions based on Android version
-            val hasBluetoothPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.BLUETOOTH_SCAN
-                ) == PackageManager.PERMISSION_GRANTED
-            } else {
-                ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.BLUETOOTH
-                ) == PackageManager.PERMISSION_GRANTED
-            }
+            // Initialize ServiceChecker
+            serviceChecker = ServiceChecker(applicationContext)
             
-            val hasLocationPermission = ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-
-            if (!hasBluetoothPermission || !hasLocationPermission) {
-                logError("Missing required permissions - Bluetooth: $hasBluetoothPermission, Location: $hasLocationPermission")
+            // Check if we can start the service
+            if (!serviceChecker.canStartBeaconService()) {
+                logError("Cannot start beacon service - Missing permissions or services disabled")
                 stopSelf()
                 return
             }
         
-        // Initialize FusedLocationProviderClient
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(applicationContext)
-        
-        // Initialize BeaconBatteryReader with application context
-        batteryReader = BeaconBatteryReader(applicationContext)
-        
-        // Initialize BeaconManager with application context
-        beaconManager = BeaconManager.getInstanceForApplication(applicationContext)
+            // Initialize FusedLocationProviderClient
+            fusedLocationClient = LocationServices.getFusedLocationProviderClient(applicationContext)
+            
+            // Initialize BeaconBatteryReader with application context
+            batteryReader = BeaconBatteryReader(applicationContext)
+            
+            // Initialize BeaconManager with application context
+            beaconManager = BeaconManager.getInstanceForApplication(applicationContext)
             
             // Configure BeaconManager with foreground service settings
             val settings = Settings(
@@ -125,21 +113,21 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
                 rssiFilterClass = RunningAverageRssiFilter::class.java
             )
             
-            beaconManager.replaceSettings(settings)
+            beaconManager?.replaceSettings(settings)
             
             // Configure BeaconManager
-            beaconManager.beaconParsers.clear() // Clear existing parsers
-        beaconManager.beaconParsers.add(BeaconParser().setBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24"))
-        beaconManager.beaconParsers.add(BeaconParser().setBeaconLayout("m:2-3=beac,i:4-19,i:20-21,i:22-23,p:24-24,d:25-25"))
+            beaconManager?.beaconParsers?.clear() // Clear existing parsers
+            beaconManager?.beaconParsers?.add(BeaconParser().setBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24"))
+            beaconManager?.beaconParsers?.add(BeaconParser().setBeaconLayout("m:2-3=beac,i:4-19,i:20-21,i:22-23,p:24-24,d:25-25"))
         
-        // Add notifiers
-        beaconManager.removeRangeNotifier(this)
-        beaconManager.removeMonitorNotifier(this)
-        beaconManager.addRangeNotifier(this)
-        beaconManager.addMonitorNotifier(this)
+            // Add notifiers
+            beaconManager?.removeRangeNotifier(this)
+            beaconManager?.removeMonitorNotifier(this)
+            beaconManager?.addRangeNotifier(this)
+            beaconManager?.addMonitorNotifier(this)
 
-        // Start scanning immediately
-        startBeaconService()
+            // Start scanning immediately
+            startBeaconService()
         } catch (e: Exception) {
             logError("Error in onCreate", e)
             stopSelf()
@@ -192,10 +180,10 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
                 Log.i(TAG, "Starting ranging beacons in region: $region")
                 
                 // Stop any existing ranging
-                beaconManager.stopRangingBeacons(region)
+                beaconManager?.stopRangingBeacons(region)
                 
                 // Start new ranging
-                beaconManager.startRangingBeacons(region)
+                beaconManager?.startRangingBeacons(region)
                 Log.i(TAG, "Beacon ranging started")
                 
                 // Start the upload timer
@@ -227,7 +215,11 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
         if (isScanning) {
             isScanning = false
             try {
-                beaconManager.stopRangingBeacons(Region("all-beacons-region", null, null, null))
+                beaconManager?.let {
+                    it.stopRangingBeacons(Region("all-beacons-region", null, null, null))
+                    it.removeRangeNotifier(this)
+                    it.removeMonitorNotifier(this)
+                }
                 stopUploadTimer()
                 beaconBuffer.clear()
                 stopForegroundCompat()
@@ -473,8 +465,6 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
         instance = null
         logDebug("Service is being destroyed")
         stopBeaconService()
-        beaconManager.removeRangeNotifier(this)
-        beaconManager.removeMonitorNotifier(this)
         super.onDestroy()
     }
 } 

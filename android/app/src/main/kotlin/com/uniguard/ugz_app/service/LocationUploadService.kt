@@ -29,13 +29,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.util.Timer
 import java.util.TimerTask
+import com.uniguard.ugz_app.utils.ServiceChecker
 
 class LocationUploadService : Service() {
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private var fusedLocationClient: FusedLocationProviderClient? = null
     private var uploadTimer: Timer? = null
     private var uploadInterval: Long = 60000 // Default 1 minute
     private var isServiceRunning = false
+    private lateinit var serviceChecker: ServiceChecker
 
     companion object {
         private const val CHANNEL_ID = "LocationUploadServiceChannel"
@@ -60,24 +62,19 @@ class LocationUploadService : Service() {
         super.onCreate()
         instance = this
         createNotificationChannel()
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(applicationContext)
         
-        // Check permissions on service start
-        val hasFineLocation = ContextCompat.checkSelfPermission(
-            this,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-
-        val hasCoarseLocation = ContextCompat.checkSelfPermission(
-            this,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-
-        if (!hasFineLocation && !hasCoarseLocation) {
-            logDebug("Location permissions not granted, stopping service")
+        // Initialize ServiceChecker
+        serviceChecker = ServiceChecker(applicationContext)
+        
+        // Check if we can start the service
+        if (!serviceChecker.canStartLocationService()) {
+            logDebug("Cannot start location service - Missing permissions or location disabled")
             stopSelf()
             return
         }
+
+        // Initialize FusedLocationProviderClient only if we have permissions
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(applicationContext)
     }
 
     private fun createNotificationChannel() {
@@ -156,23 +153,20 @@ class LocationUploadService : Service() {
 
     private suspend fun getCurrentLocation(): android.location.Location? {
         return try {
-            // Check location permissions
-            val hasFineLocation = ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-
-            val hasCoarseLocation = ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-
-            if (!hasFineLocation && !hasCoarseLocation) {
-                logDebug("Location permissions not granted")
+            // Check if we can start the service
+            if (!serviceChecker.canStartLocationService()) {
+                logDebug("Location service not available")
+                stopSelf()
                 return null
             }
 
-            val location = fusedLocationClient.getCurrentLocation(
+            // Check if fusedLocationClient is initialized
+            val client = fusedLocationClient ?: run {
+                logDebug("Location client not initialized")
+                return null
+            }
+
+            val location = client.getCurrentLocation(
                 Priority.PRIORITY_HIGH_ACCURACY,
                 object : CancellationToken() {
                     override fun onCanceledRequested(listener: OnTokenCanceledListener) = CancellationTokenSource().token
