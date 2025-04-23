@@ -48,14 +48,16 @@ class HistoryPendingSection extends ConsumerWidget {
 
                   // Show a message if the data is empty
                   if (pendingForms.isEmpty) {
-                    return const Emoticons(text: "No pending forms found");
+                    return Emoticons(
+                      text: context.l10n!.no_pending_forms_found,
+                    );
                   }
 
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Long press for delete item!",
+                        context.l10n!.press_long_delete_item,
                         style: context.textTheme.labelSmall!.copyWith(
                           color: AppColors.warning,
                         ),

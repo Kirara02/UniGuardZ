@@ -11,6 +11,7 @@ import 'package:ugz_app/src/features/auth/providers/user_data_provider.dart';
 import 'package:ugz_app/src/features/auth/widgets/ug_text_field.dart';
 import 'package:ugz_app/src/routes/router_config.dart';
 import 'package:ugz_app/src/utils/extensions/custom_extensions.dart';
+import 'package:ugz_app/src/utils/misc/print.dart';
 import 'package:ugz_app/src/utils/misc/toast/toast.dart';
 import 'package:ugz_app/src/widgets/custom_button.dart';
 import 'package:ugz_app/src/widgets/dialog/exit_app_dialog.dart';
@@ -272,7 +273,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
     // For Android, use the existing check
     final bluetoothStatus = await Permission.bluetooth.serviceStatus.isEnabled;
-    print(bluetoothStatus);
+    printIfDebug(bluetoothStatus);
     return bluetoothStatus;
   }
 
@@ -294,7 +295,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   Future<void> _requestDisableBatteryOptimization() async {
     // AppSettings.openAppSettings(type: AppSettingsType.batteryOptimization);
     await Permission.ignoreBatteryOptimizations.request();
-    print(await Permission.ignoreBatteryOptimizations.status);
+    printIfDebug(await Permission.ignoreBatteryOptimizations.status);
     if (await Permission
         .ignoreBatteryOptimizations
         .status
@@ -340,7 +341,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
     // If not permanently denied, request permission
     final requestStatus = await Permission.locationAlways.request();
-    print("Location always permission request status: $requestStatus");
+    printIfDebug("Location always permission request status: $requestStatus");
 
     // If permission is denied after request, check if it's permanently denied
     if (requestStatus.isDenied) {
@@ -504,18 +505,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               return null;
                             },
                           ),
-                          const SizedBox(height: 16),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: GestureDetector(
-                              onTap: () => ForgotPasswordRoute().push(context),
-                              child: Text(
-                                "${context.l10n!.forgot_password}?",
-                                style: Theme.of(context).textTheme.labelMedium!
-                                    .copyWith(fontWeight: FontWeight.w500),
-                              ),
-                            ),
-                          ),
+                          // const SizedBox(height: 16),
+                          // Align(
+                          //   alignment: Alignment.centerLeft,
+                          //   child: GestureDetector(
+                          //     onTap: () => ForgotPasswordRoute().push(context),
+                          //     child: Text(
+                          //       "${context.l10n!.forgot_password}?",
+                          //       style: Theme.of(context).textTheme.labelMedium!
+                          //           .copyWith(fontWeight: FontWeight.w500),
+                          //     ),
+                          //   ),
+                          // ),
                           const SizedBox(height: 16),
                           CustomButton(
                             fullwidth: true,

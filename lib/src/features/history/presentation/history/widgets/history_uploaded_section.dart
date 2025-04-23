@@ -6,6 +6,7 @@ import 'package:ugz_app/src/constants/gen/assets.gen.dart';
 import 'package:ugz_app/src/features/history/providers/history_uploaded_providers.dart';
 import 'package:ugz_app/src/routes/router_config.dart';
 import 'package:ugz_app/src/utils/extensions/custom_extensions.dart';
+import 'package:ugz_app/src/widgets/emoticons.dart';
 import 'package:ugz_app/src/widgets/list_item.dart';
 
 class HistoryUploadedSection extends ConsumerStatefulWidget {
@@ -69,12 +70,7 @@ class _HistoryUploadedSectionState
       child: switch (historyAsync) {
         AsyncData(:final value) =>
           value.isEmpty
-              ? Center(
-                child: Text(
-                  'No history found',
-                  style: context.textTheme.bodyLarge,
-                ),
-              )
+              ? Emoticons(text: context.l10n!.no_history_found)
               : ListView.separated(
                 controller: _scrollController,
                 itemCount: value.length + (_isLoadingMore ? 1 : 0),

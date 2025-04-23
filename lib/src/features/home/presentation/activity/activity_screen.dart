@@ -72,7 +72,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                       ),
                     ),
                   if (activityState.isSubmitting) const SizedBox(width: 8),
-                  const Text("Submit"),
+                  Text(context.l10n!.submit),
                 ],
               ),
             ),

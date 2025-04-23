@@ -7,6 +7,7 @@ import 'package:ugz_app/src/features/auth/providers/user_data_provider.dart';
 import 'package:ugz_app/src/features/auth/widgets/ug_text_field.dart';
 import 'package:ugz_app/src/routes/router_config.dart';
 import 'package:ugz_app/src/utils/extensions/custom_extensions.dart';
+import 'package:ugz_app/src/utils/misc/avatar_utils.dart';
 import 'package:ugz_app/src/widgets/custom_view.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -30,7 +31,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     var user = ref.read(userDataProvider).valueOrNull;
     _nameController.text = user?.name ?? "";
     _emailController.text = user?.email ?? "";
-    // _roleController.text = "Employee";
+    if (user?.role.roleName != null) {
+      _roleController.text = user!.role.roleName!;
+    }
   }
 
   @override
@@ -38,6 +41,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     super.dispose();
     _nameController.dispose();
     _emailController.dispose();
+    _roleController.dispose();
   }
 
   @override
@@ -71,12 +75,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 ClipOval(
-                  child: Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: context.colorScheme.onSurfaceVariant,
-                    ),
+                  child: AvatarUtils.createAvatar(
+                    _nameController.text,
+                    size: 80,
                   ),
                 ),
                 const Gap(20),

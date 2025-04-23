@@ -7,6 +7,7 @@ import 'package:ugz_app/src/routes/router_config.dart';
 import 'package:ugz_app/src/utils/extensions/custom_extensions.dart';
 import 'package:ugz_app/src/utils/misc/print.dart';
 import 'package:ugz_app/src/widgets/custom_view.dart';
+import 'package:ugz_app/src/widgets/emoticons.dart';
 import 'package:ugz_app/src/widgets/list_item.dart';
 
 class TasksScreen extends ConsumerStatefulWidget {
@@ -57,12 +58,10 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           children: [
-            // NavigatorHeader(title: context.l10n!.activity_log),
-            // const Gap(16),
             activities.when(
               data: (data) {
                 if (data.isEmpty) {
-                  return const Center(child: Text("Tasks empty"));
+                  return Emoticons(text: context.l10n!.no_tasks_found);
                 }
                 return ListView.separated(
                   itemCount: data.length,

@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "app_name":"UniguardZ",
+  "app_name":"UniGuardZ",
   "app_language" : "App Language",
   "app_theme" : "App Theme Mode",
   "theme_mode_dark": "Dark",
@@ -81,5 +81,28 @@
         "example": "activity"
       }
     }
-  }
+  },
+  "press_long_delete_item" : "Long press for delete item!",
+  "location_not_found" : "Location not available.",
+  "no_activities_found": "No activities found",
+  "no_forms_found": "No forms found",
+  "no_tasks_found": "No tasks found",
+  "no_history_found": "No history found",
+  "no_pending_forms_found": "No pending forms found",
+  "history_detail_form_name": "Form Name",
+  "history_detail_task_name": "Task Name",
+  "history_detail_activity_name": "Activity Name",
+  "history_detail_submitted_time": "Submitted Time",
+  "history_detail_form_fields": "Form Fields",
+  "history_detail_task_fields": "Task Fields",
+  "history_detail_comment": "Comment",
+  "history_detail_photo": "Photo",
+  "history_detail_history_type": "History Type",
+  "history_detail_device_name": "Device Name",
+  "history_detail_time": "Time",
+  "history_detail_checkpoint_name": "Checkpoint Name",
+  "history_detail_start_datetime": "Start Datetime",
+  "history_detail_end_datetime": "End Datetime",
+  "history_detail_unknown_type": "Unknown type",
+  "history_detail_failed_load_image": "Failed to load image"
 }

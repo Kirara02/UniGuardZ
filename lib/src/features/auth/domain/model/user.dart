@@ -13,6 +13,7 @@ abstract class User with _$User {
     @JsonKey(name: 'web_access') bool? webAccess,
     @JsonKey(name: 'system_access') bool? systemAccess,
     @JsonKey(name: 'parent_branch') required ParentBranch parentBranch,
+    @JsonKey(name: 'role') required Role role,
   }) = _User;
 
   factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
@@ -28,4 +29,11 @@ abstract class ParentBranch with _$ParentBranch {
 
   factory ParentBranch.fromJson(Map<String, dynamic> json) =>
       _$ParentBranchFromJson(json);
+}
+
+@freezed
+abstract class Role with _$Role {
+  const factory Role({@JsonKey(name: "role_name") String? roleName}) = _Role;
+
+  factory Role.fromJson(Map<String, dynamic> json) => _$RoleFromJson(json);
 }

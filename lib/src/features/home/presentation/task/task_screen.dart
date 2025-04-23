@@ -82,7 +82,7 @@ class _TaskScreenState extends ConsumerState<TaskScreen>
                       ),
                     ),
                   if (taskState.isSubmitting) const SizedBox(width: 8),
-                  const Text("Submit"),
+                  Text(context.l10n!.submit),
                 ],
               ),
             ),

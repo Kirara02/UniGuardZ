@@ -222,7 +222,7 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                "Submitted Time: ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(state.data!['timestamp']))}",
+                                "${context.l10n!.history_detail_submitted_time}: ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(state.data!['timestamp']))}",
                               ),
                               const SizedBox(height: 8),
                               _buildPendingFields(context, state.data!),
@@ -256,16 +256,16 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Form Name: ${logForm.formName}",
+              "${context.l10n!.history_detail_form_name}: ${logForm.formName}",
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              "Submitted Time: ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(logForm.originalSubmittedTime).toLocal())}",
+              "${context.l10n!.history_detail_submitted_time}: ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(logForm.originalSubmittedTime).toLocal())}",
             ),
             const SizedBox(height: 16),
             Text(
-              "Form Fields:",
+              "${context.l10n!.history_detail_form_fields}:",
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
@@ -334,16 +334,16 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Task Name: ${logTask.taskName}",
+              "${context.l10n!.history_detail_task_name}: ${logTask.taskName}",
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              "Submitted Time: ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(logTask.originalSubmittedTime).toLocal())}",
+              "${context.l10n!.history_detail_submitted_time}: ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(logTask.originalSubmittedTime).toLocal())}",
             ),
             const SizedBox(height: 16),
             Text(
-              "Task Fields:",
+              "${context.l10n!.history_detail_task_fields}:",
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
@@ -411,28 +411,34 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Activity Name: ${logActivity.activityName}",
+              "${context.l10n!.history_detail_activity_name}: ${logActivity.activityName}",
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              "Submitted Time: ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(logActivity.originalSubmittedTime).toLocal())}",
+              "${context.l10n!.history_detail_submitted_time}: ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(logActivity.originalSubmittedTime).toLocal())}",
             ),
             const SizedBox(height: 8),
             if (logActivity.comment != null) ...[
-              Text("Comment:", style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                context.l10n!.history_detail_comment,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const SizedBox(height: 4),
               Text(logActivity.comment!),
               const SizedBox(height: 8),
             ],
             if (logActivity.photoUrl != null) ...[
-              Text("Photo:", style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                context.l10n!.history_detail_photo,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const SizedBox(height: 4),
               Image.network(
                 logActivity.photoUrl!,
                 errorBuilder:
                     (context, error, stackTrace) =>
-                        const Text('Failed to load image'),
+                        Text(context.l10n!.history_detail_failed_load_image),
               ),
             ],
           ],
@@ -444,17 +450,17 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "History Type: ${logData?['alert_event_name']}",
+              "${context.l10n!.history_detail_history_type}: ${logData?['alert_event_name']}",
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              "Device Name: ${logUser.deviceName}",
+              "${context.l10n!.history_detail_device_name}: ${logUser.deviceName}",
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              "Time: ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(logUser.eventTime).toLocal())}",
+              "${context.l10n!.history_detail_time}: ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(logUser.eventTime).toLocal())}",
             ),
           ],
         );
@@ -467,17 +473,17 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Checkpoint Name: ${logChekpoint.checkpointName}",
+              "${context.l10n!.history_detail_checkpoint_name}: ${logChekpoint.checkpointName}",
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              "Device Name: ${logChekpoint.deviceName}",
+              "${context.l10n!.history_detail_device_name}: ${logChekpoint.deviceName}",
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              "Time: ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(logChekpoint.originalSubmittedTime).toLocal())}",
+              "${context.l10n!.history_detail_time}: ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(logChekpoint.originalSubmittedTime).toLocal())}",
             ),
           ],
         );
@@ -489,27 +495,27 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "History Type: ${logData?['alert_event_name']}",
+              "${context.l10n!.history_detail_history_type}: ${logData?['alert_event_name']}",
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              "Device Name: ${logAlarm.deviceName}",
+              "${context.l10n!.history_detail_device_name}: ${logAlarm.deviceName}",
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              "Start Datetime: ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(logAlarm.startDateTime!).toLocal())}",
+              "${context.l10n!.history_detail_start_datetime}: ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(logAlarm.startDateTime!).toLocal())}",
             ),
             const SizedBox(height: 8),
             Text(
-              "End Datetime: ${logAlarm.endDateTime != null ? DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(logAlarm.endDateTime!).toLocal()) : "-"}",
+              "${context.l10n!.history_detail_end_datetime}: ${logAlarm.endDateTime != null ? DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(logAlarm.endDateTime!).toLocal()) : "-"}",
             ),
           ],
         );
 
       default:
-        return const Text('Unknown type');
+        return Text(context.l10n!.history_detail_unknown_type);
     }
   }
 
@@ -582,13 +588,13 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
   String _getTitleByCategory(int category, Map<String, dynamic> data) {
     switch (category) {
       case 1:
-        return "Form Name: ${data['description'] ?? '-'}";
+        return "${context.l10n!.history_detail_form_name}: ${data['description'] ?? '-'}";
       case 2:
-        return "Task Name: ${data['description'] ?? '-'}";
+        return "${context.l10n!.history_detail_task_name}: ${data['description'] ?? '-'}";
       case 3:
-        return "Activity Name: ${data['description'] ?? '-'}";
+        return "${context.l10n!.history_detail_activity_name}: ${data['description'] ?? '-'}";
       default:
-        return "Form Name: ${data['description'] ?? '-'}";
+        return "${context.l10n!.history_detail_form_name}: ${data['description'] ?? '-'}";
     }
   }
 }
