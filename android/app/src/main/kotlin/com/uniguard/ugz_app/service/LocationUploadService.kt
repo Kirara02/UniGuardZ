@@ -58,23 +58,29 @@ class LocationUploadService : Service() {
         }
     }
 
+    private fun logError(message: String, e: Exception? = null) {
+        Log.e(TAG, message, e)
+    }
+
     override fun onCreate() {
         super.onCreate()
         instance = this
-        createNotificationChannel()
         
-        // Initialize ServiceChecker
-        serviceChecker = ServiceChecker(applicationContext)
-        
-        // Check if we can start the service
-        if (!serviceChecker.canStartLocationService()) {
-            logDebug("Cannot start location service - Missing permissions or location disabled")
-            stopSelf()
-            return
-        }
+        try {
+            createNotificationChannel()
+            serviceChecker = ServiceChecker(applicationContext)
+            
+            if (!serviceChecker.canStartLocationService()) {
+                logError("Cannot start location service - Missing permissions or location disabled")
+                stopSelf()
+                return
+            }
 
-        // Initialize FusedLocationProviderClient only if we have permissions
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(applicationContext)
+            fusedLocationClient = LocationServices.getFusedLocationProviderClient(applicationContext)
+        } catch (e: Exception) {
+            logError("Error in onCreate: ${e.message}", e)
+            stopSelf()
+        }
     }
 
     private fun createNotificationChannel() {
@@ -106,12 +112,29 @@ class LocationUploadService : Service() {
 
     private fun startLocationUpload() {
         isServiceRunning = true
-        // Start foreground service
-        startForeground(NOTIFICATION_ID, createNotification())
         
-        // Start upload timer
-        uploadTimer = Timer()
-        scheduleNextUpload()
+        try {
+            startForeground(NOTIFICATION_ID, createNotification())
+            uploadTimer = Timer()
+            scheduleNextUpload()
+            
+            // Schedule a check to verify service is working
+            Timer().schedule(object : TimerTask() {
+                override fun run() {
+                    if (!isServiceRunning) {
+                        logError("Service is not running, attempting to restart...")
+                        stopLocationUpload()
+                        startLocationUpload()
+                    }
+                }
+            }, 30000)
+            
+        } catch (e: Exception) {
+            logError("Error starting location upload: ${e.message}", e)
+            isServiceRunning = false
+            stopForegroundCompat()
+            stopSelf()
+        }
     }
 
     private fun scheduleNextUpload() {
@@ -153,16 +176,14 @@ class LocationUploadService : Service() {
 
     private suspend fun getCurrentLocation(): android.location.Location? {
         return try {
-            // Check if we can start the service
             if (!serviceChecker.canStartLocationService()) {
-                logDebug("Location service not available")
+                logError("Location service not available")
                 stopSelf()
                 return null
             }
 
-            // Check if fusedLocationClient is initialized
             val client = fusedLocationClient ?: run {
-                logDebug("Location client not initialized")
+                logError("Location client not initialized")
                 return null
             }
 
@@ -174,12 +195,16 @@ class LocationUploadService : Service() {
                 }
             ).await()
 
+            if (location == null) {
+                logError("Location is null")
+            }
+            
             location
         } catch (e: SecurityException) {
-            logDebug("SecurityException while getting location: ${e.message}")
+            logError("SecurityException while getting location: ${e.message}", e)
             null
         } catch (e: Exception) {
-            logDebug("Error getting location: ${e.message}")
+            logError("Error getting location: ${e.message}", e)
             null
         }
     }
@@ -223,20 +248,29 @@ class LocationUploadService : Service() {
 
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        
+        if (!serviceChecker.canStartLocationService()) {
+            logError("Cannot start location service - Missing permissions or location disabled")
+            stopSelf()
+            return START_NOT_STICKY
+        }
+
         intent?.let {
-            // Get upload interval from intent
             uploadInterval = it.getLongExtra(EXTRA_INTERVAL, 60000)
         }
         
-        startLocationUpload()
-        return START_STICKY
+        try {
+            startLocationUpload()
+            return START_STICKY
+        } catch (e: Exception) {
+            logError("Error in onStartCommand: ${e.message}", e)
+            stopSelf()
+            return START_NOT_STICKY
+        }
     }
 
     override fun onDestroy() {
         isServiceRunning = false
         instance = null
-        logDebug("Service is being destroyed")
         stopLocationUpload()
         super.onDestroy()
     }

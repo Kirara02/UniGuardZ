@@ -83,27 +83,18 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
         instance = this
         try {
             createNotificationChannel()
-            
-            // Initialize ServiceChecker
             serviceChecker = ServiceChecker(applicationContext)
             
-            // Check if we can start the service
             if (!serviceChecker.canStartBeaconService()) {
                 logError("Cannot start beacon service - Missing permissions or services disabled")
                 stopSelf()
                 return
             }
         
-            // Initialize FusedLocationProviderClient
             fusedLocationClient = LocationServices.getFusedLocationProviderClient(applicationContext)
-            
-            // Initialize BeaconBatteryReader with application context
             batteryReader = BeaconBatteryReader(applicationContext)
-            
-            // Initialize BeaconManager with application context
             beaconManager = BeaconManager.getInstanceForApplication(applicationContext)
             
-            // Configure BeaconManager with foreground service settings
             val settings = Settings(
                 scanStrategy = Settings.ForegroundServiceScanStrategy(
                     createNotification(), NOTIFICATION_ID
@@ -114,19 +105,15 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
             )
             
             beaconManager?.replaceSettings(settings)
-            
-            // Configure BeaconManager
-            beaconManager?.beaconParsers?.clear() // Clear existing parsers
+            beaconManager?.beaconParsers?.clear()
             beaconManager?.beaconParsers?.add(BeaconParser().setBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24"))
             beaconManager?.beaconParsers?.add(BeaconParser().setBeaconLayout("m:2-3=beac,i:4-19,i:20-21,i:22-23,p:24-24,d:25-25"))
         
-            // Add notifiers
             beaconManager?.removeRangeNotifier(this)
             beaconManager?.removeMonitorNotifier(this)
             beaconManager?.addRangeNotifier(this)
             beaconManager?.addMonitorNotifier(this)
 
-            // Start scanning immediately
             startBeaconService()
         } catch (e: Exception) {
             logError("Error in onCreate", e)
@@ -173,41 +160,35 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
 
     private fun startBeaconService() {
         if (!isScanning) {
-            Log.i(TAG, "Attempting to start beacon service...")
             isScanning = true
+            isServiceRunning = true
+            
             try {
+                startForeground(NOTIFICATION_ID, createNotification())
                 val region = Region("all-beacons-region", null, null, null)
-                Log.i(TAG, "Starting ranging beacons in region: $region")
-                
-                // Stop any existing ranging
                 beaconManager?.stopRangingBeacons(region)
-                
-                // Start new ranging
                 beaconManager?.startRangingBeacons(region)
-                Log.i(TAG, "Beacon ranging started")
-                
-                // Start the upload timer
                 startUploadTimer()
-                Log.i(TAG, "Upload timer started")
-                
-                Log.i(TAG, "Beacon service started successfully")
-                Log.i(TAG, "Scan interval: $SCAN_INTERVAL ms")
-                Log.i(TAG, "Upload interval: $UPLOAD_INTERVAL ms")
                 
                 // Schedule a check to verify scanning is working
                 Timer().schedule(object : TimerTask() {
                     override fun run() {
-                        Log.i(TAG, "Scan status check - isScanning: $isScanning, buffer size: ${beaconBuffer.size}")
+                        val isScanningActive = beaconManager?.rangedRegions?.isNotEmpty() ?: false
+                        if (!isScanningActive) {
+                            logError("Beacon scanning is not active, attempting to restart...")
+                            stopBeaconService()
+                            startBeaconService()
+                        }
                     }
-                }, 30000) // Check after 30 seconds
+                }, 30000)
                 
             } catch (e: Exception) {
-                Log.e(TAG, "Error starting beacon service: ${e.message}", e)
+                logError("Error starting beacon service: ${e.message}", e)
                 isScanning = false
+                isServiceRunning = false
                 stopForegroundCompat()
+                stopSelf()
             }
-        } else {
-            Log.i(TAG, "Beacon service is already running")
         }
     }
 
@@ -455,15 +436,25 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        isServiceRunning = true
-        startBeaconService()
-        return START_STICKY
+        if (!serviceChecker.canStartBeaconService()) {
+            logError("Cannot start beacon service - Missing permissions or services disabled")
+            stopSelf()
+            return START_NOT_STICKY
+        }
+        
+        try {
+            startBeaconService()
+            return START_STICKY
+        } catch (e: Exception) {
+            logError("Error in onStartCommand: ${e.message}", e)
+            stopSelf()
+            return START_NOT_STICKY
+        }
     }
 
     override fun onDestroy() {
         isServiceRunning = false
         instance = null
-        logDebug("Service is being destroyed")
         stopBeaconService()
         super.onDestroy()
     }

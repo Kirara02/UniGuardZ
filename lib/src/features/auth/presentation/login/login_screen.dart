@@ -68,7 +68,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed && _isActive && mounted) {
-      _requestPermissions();
+      // Add a small delay to ensure the app is fully resumed
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          _requestPermissions();
+        }
+      });
     }
   }
 
@@ -117,6 +122,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Future<void> _checkBluetoothPermission() async {
+    if (!mounted) return;
     await _showLoadingDialog(context, "Checking Bluetooth Permission...");
 
     // Check Bluetooth status
@@ -126,7 +132,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     }
     _isLoadingDialogVisible = false;
 
-    if (!isBluetoothEnabled) {
+    if (!isBluetoothEnabled && mounted) {
       await _showPermissionDialog(
         message:
             "Bluetooth permission: Bluetooth beacon scanning requires permission.",
@@ -136,6 +142,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Future<void> _checkBluetoothScanPermission() async {
+    if (!mounted) return;
     final sdkInt = await _getAndroidVersion();
     if (sdkInt >= 31) {
       await _showLoadingDialog(
@@ -149,7 +156,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       }
       _isLoadingDialogVisible = false;
 
-      if (!status.isGranted) {
+      if (!status.isGranted && mounted) {
         await _showPermissionDialog(
           message:
               "Bluetooth Scan permission: Required for scanning nearby Bluetooth devices.",
@@ -167,6 +174,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Future<void> _checkBluetoothConnectPermission() async {
+    if (!mounted) return;
     final sdkInt = await _getAndroidVersion();
     if (sdkInt >= 31) {
       await _showLoadingDialog(
@@ -178,7 +186,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       if (mounted) Navigator.of(context).pop();
       _isLoadingDialogVisible = false;
 
-      if (!status.isGranted) {
+      if (!status.isGranted && mounted) {
         await _showPermissionDialog(
           message:
               "Bluetooth Connect permission: Required to connect and read device information (like name).",
@@ -195,6 +203,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Future<void> _checkBatteryOptimization() async {
+    if (!mounted) return;
     await _showLoadingDialog(context, "Checking Battery Optimization...");
 
     // Cek kondisi battery optimization
@@ -204,7 +213,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     }
     _isLoadingDialogVisible = false;
 
-    if (!isBatteryOptimized) {
+    if (!isBatteryOptimized && mounted) {
       await _showPermissionDialog(
         message:
             "Battery optimizations: Battery optimization enabled. Location functions may be negatively impacted",
@@ -214,6 +223,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Future<void> _checkLocationPermissions() async {
+    if (!mounted) return;
     await _showLoadingDialog(context, "Checking Location Permissions...");
 
     // Cek status permission lokasi
@@ -223,7 +233,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     }
     _isLoadingDialogVisible = false;
 
-    if (!isLocationGranted) {
+    if (!isLocationGranted && mounted) {
       await _showPermissionDialog(
         message: "GPS permission: GPS required permission",
         onFix: _requestLocationPermissions,
@@ -232,6 +242,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Future<void> _checkLocationAlwaysPermissions() async {
+    if (!mounted) return;
     await _showLoadingDialog(
       context,
       "Checking Background Location Permissions...",
@@ -243,7 +254,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     }
     _isLoadingDialogVisible = false;
 
-    if (!isLocationAlwaysGranted) {
+    if (!isLocationAlwaysGranted && mounted) {
       await _showPermissionDialog(
         message:
             "GPS Background permission: Uniguard collects location data to enable tracking even when the app is in the background. Background access is not enabled. Location tracking may be negatively impacted.",
