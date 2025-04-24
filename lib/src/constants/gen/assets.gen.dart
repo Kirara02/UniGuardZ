@@ -105,16 +105,9 @@ class $AssetsIconsGen {
 class $AssetsImagesGen {
   const $AssetsImagesGen();
 
-  /// File path: assets/images/activitylog.png
-  AssetGenImage get activitylog =>
-      const AssetGenImage('assets/images/activitylog.png');
-
   /// File path: assets/images/add_image.png
   AssetGenImage get addImage =>
       const AssetGenImage('assets/images/add_image.png');
-
-  /// File path: assets/images/alarm.png
-  AssetGenImage get alarm => const AssetGenImage('assets/images/alarm.png');
 
   /// File path: assets/images/alarm_icon.png
   AssetGenImage get alarmIcon =>
@@ -134,9 +127,6 @@ class $AssetsImagesGen {
   /// File path: assets/images/form_icon_dark.png
   AssetGenImage get formIconDark =>
       const AssetGenImage('assets/images/form_icon_dark.png');
-
-  /// File path: assets/images/forms.png
-  AssetGenImage get forms => const AssetGenImage('assets/images/forms.png');
 
   /// File path: assets/images/full_moon.png
   AssetGenImage get fullMoon =>
@@ -160,14 +150,6 @@ class $AssetsImagesGen {
   AssetGenImage get homeActive =>
       const AssetGenImage('assets/images/home_active.png');
 
-  /// File path: assets/images/location_pin.png
-  AssetGenImage get locationPin =>
-      const AssetGenImage('assets/images/location_pin.png');
-
-  /// File path: assets/images/location_red.png
-  AssetGenImage get locationRed =>
-      const AssetGenImage('assets/images/location_red.png');
-
   /// File path: assets/images/log_icon.png
   AssetGenImage get logIcon =>
       const AssetGenImage('assets/images/log_icon.png');
@@ -179,9 +161,6 @@ class $AssetsImagesGen {
   /// File path: assets/images/login_logo.png
   AssetGenImage get loginLogo =>
       const AssetGenImage('assets/images/login_logo.png');
-
-  /// File path: assets/images/moon.png
-  AssetGenImage get moon => const AssetGenImage('assets/images/moon.png');
 
   /// File path: assets/images/nfc_failed.png
   AssetGenImage get nfcFailed =>
@@ -203,10 +182,6 @@ class $AssetsImagesGen {
   AssetGenImage get notSupport =>
       const AssetGenImage('assets/images/not_support.png');
 
-  /// File path: assets/images/online-activity.png
-  AssetGenImage get onlineActivity =>
-      const AssetGenImage('assets/images/online-activity.png');
-
   /// File path: assets/images/save_files.png
   AssetGenImage get saveFiles =>
       const AssetGenImage('assets/images/save_files.png');
@@ -214,13 +189,6 @@ class $AssetsImagesGen {
   /// File path: assets/images/scanning.png
   AssetGenImage get scanning =>
       const AssetGenImage('assets/images/scanning.png');
-
-  /// File path: assets/images/signature.png
-  AssetGenImage get signature =>
-      const AssetGenImage('assets/images/signature.png');
-
-  /// File path: assets/images/submit.png
-  AssetGenImage get submit => const AssetGenImage('assets/images/submit.png');
 
   /// File path: assets/images/sun.png
   AssetGenImage get sun => const AssetGenImage('assets/images/sun.png');
@@ -233,50 +201,37 @@ class $AssetsImagesGen {
   AssetGenImage get taskIconDark =>
       const AssetGenImage('assets/images/task_icon_dark.png');
 
-  /// File path: assets/images/tasks.png
-  AssetGenImage get tasks => const AssetGenImage('assets/images/tasks.png');
-
   /// File path: assets/images/uniguard_icon.png
   AssetGenImage get uniguardIcon =>
       const AssetGenImage('assets/images/uniguard_icon.png');
 
   /// List of all assets
   List<AssetGenImage> get values => [
-    activitylog,
     addImage,
-    alarm,
     alarmIcon,
     alarmIconDark,
     camera,
     formIcon,
     formIconDark,
-    forms,
     fullMoon,
     gallery,
     histories,
     historiesActive,
     home,
     homeActive,
-    locationPin,
-    locationRed,
     logIcon,
     logIconDark,
     loginLogo,
-    moon,
     nfcFailed,
     nfcLogoWhite,
     nfcSuccess,
     notFound,
     notSupport,
-    onlineActivity,
     saveFiles,
     scanning,
-    signature,
-    submit,
     sun,
     taskIcon,
     taskIconDark,
-    tasks,
     uniguardIcon,
   ];
 }
