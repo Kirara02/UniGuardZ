@@ -11,7 +11,6 @@ import 'package:ugz_app/src/channel/uniguard_service.dart';
 import 'package:ugz_app/src/local/db/uniguard_db.dart';
 import 'package:ugz_app/src/utils/extensions/custom_extensions.dart';
 import 'package:ugz_app/src/utils/mixin/shared_preferences_client_mixin.dart';
-import 'package:ugz_app/src/utils/storage/dio/background_network_module.dart';
 import 'package:ugz_app/src/utils/storage/dio/dio_client.dart';
 import 'package:ugz_app/src/utils/storage/dio/network_module.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -28,13 +27,6 @@ DioClient dioClientKey(DioClientKeyRef ref) => DioClient(
         hiveCacheStore: ref.watch(hiveCacheStoreProvider),
         ref: ref,
       ),
-);
-
-@riverpod
-DioClient backgroundDioClientKey(BackgroundDioClientKeyRef ref) => DioClient(
-  dio: ref
-      .watch(backgroundNetworkModuleProvider)
-      .provideDio(baseUrl: DBKeys.serverUrl.initial),
 );
 
 @riverpod

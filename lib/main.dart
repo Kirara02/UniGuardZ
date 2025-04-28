@@ -9,14 +9,11 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ugz_app/src/uniguard.dart';
-import 'package:ugz_app/src/utils/service/geolocation_tracking_service.dart';
 
 import 'src/global_providers/global_providers.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  await GeolocationTrackingService().requestNotificationPermission();
 
   final packageInfo = await PackageInfo.fromPlatform();
   final sharedPreferences = await SharedPreferences.getInstance();

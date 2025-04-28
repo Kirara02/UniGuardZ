@@ -17,42 +17,24 @@ class CheckpointRepositoryImpl implements CheckpointRepository {
     : _dioClient = dioClient;
 
   @override
-  Future<ApiResponse<ScanNfcSubmitModel>> submitNfcScan({
-    required String checkpointId,
-    required double latitude,
-    required double longitude,
-    required String timeSubmit,
-  }) async {
-    return await _dioClient.postApiResponse(
-      "mobile-api/admin/checkpoint/log",
-      // data: {
-      //   "type": "beacon", // Beacon || NFC
-      //   "beacon": {
-      //     "minor_value": "DUMMY_MINOR_VALUE",
-      //     "major_value": "DUMMY_MAJOR_VALUE",
-      //     "battery_level": 80
-      //   }, // opsional tapi wajib diisi jika type nya beacon
-      //   "nfc": {
-      //     "hex": "DUMMY_HEX"
-      //   }, // opsional tapi wajib diisi jika type nya nfc
-      //   "latitude": -6.2088,
-      //   "longitude": 106.8456,
-      //   "original_submitted_time": "2025-04-04T23:10:00Z"
-      // },
-      data: {
-        "checkpoint_id": checkpointId,
-        "latitude": latitude,
-        "longitude": longitude,
-        "original_submitted_time": timeSubmit,
-      },
-      converter: (json) => ScanNfcSubmitModel.fromJson(json),
-    );
-  }
-
-  @override
   Future<ApiResponse<ScanNfcSubmitModel>> submitCheckpoint({
     required SubmitCheckpointParams params,
   }) async {
+    // data: {
+    //   "type": "beacon", // Beacon || NFC
+    //   "beacon": {
+    //     "minor_value": "DUMMY_MINOR_VALUE",
+    //     "major_value": "DUMMY_MAJOR_VALUE",
+    //     "battery_level": 80
+    //   }, // opsional tapi wajib diisi jika type nya beacon
+    //   "nfc": {
+    //     "hex": "DUMMY_HEX"
+    //   }, // opsional tapi wajib diisi jika type nya nfc
+    //   "latitude": -6.2088,
+    //   "longitude": 106.8456,
+    //   "original_submitted_time": "2025-04-04T23:10:00Z"
+    // },
+
     final Map<String, dynamic> data = {
       "type": params.type,
       "latitude": params.latitude,
@@ -93,14 +75,6 @@ class CheckpointRepositoryImpl implements CheckpointRepository {
   }) async {
     return await _dioClient.getApiListResponse<CheckpointModel>(
       "mobile-api/admin/checkpoint",
-      options: Options(
-        headers: {
-          "Authorization": "Bearer $token",
-          "x-app-build": buildCode,
-          'x-device-name': deviceName,
-          'x-device-uid': deviceId,
-        },
-      ),
       queryParameters: {
         'checkpoint_type_id': checkpointType,
         // 1 = BEACONS, 2 = NFC, 3 = RFID, 4 = GEOFENCE
@@ -111,6 +85,5 @@ class CheckpointRepositoryImpl implements CheckpointRepository {
 }
 
 @riverpod
-CheckpointRepository checkpointRepository(ref) => CheckpointRepositoryImpl(
-  dioClient: ref.watch(backgroundDioClientKeyProvider),
-);
+CheckpointRepository checkpointRepository(ref) =>
+    CheckpointRepositoryImpl(dioClient: ref.watch(dioClientKeyProvider));

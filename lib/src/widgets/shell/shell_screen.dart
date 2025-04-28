@@ -16,6 +16,8 @@ import 'package:ugz_app/src/utils/extensions/custom_extensions.dart';
 import 'package:ugz_app/src/utils/misc/print.dart';
 import 'package:ugz_app/src/widgets/custom_view.dart';
 import 'package:ugz_app/src/widgets/dialog/exit_app_dialog.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'dart:io' show Platform;
 
 import 'big_screen_navigation_bar.dart';
 import 'small_screen_navigation_bar.dart';
@@ -30,12 +32,61 @@ class ShellScreen extends ConsumerStatefulWidget {
 
 class _ShellScreenState extends ConsumerState<ShellScreen> {
   @override
+  @override
   void initState() {
     super.initState();
 
-    // if (!kDebugMode) {
-    WidgetsFlutterBinding.ensureInitialized().addPostFrameCallback((_) async {
-      // Initialize and start beacon service
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final deviceInfo = DeviceInfoPlugin();
+      final androidInfo = await deviceInfo.androidInfo;
+
+      final bool permissionGranted = await _checkAndRequestPermissions(
+        androidInfo,
+      );
+
+      if (!permissionGranted) {
+        printIfDebug(
+          "Permission belum granted secara penuh (locationAlways dan/atau notification)",
+        );
+        return;
+      }
+
+      await _initializeAndStartServices();
+    });
+  }
+
+  Future<bool> _checkAndRequestPermissions(
+    AndroidDeviceInfo androidInfo,
+  ) async {
+    if (!Platform.isAndroid) return false;
+
+    // Request Notification permission if Android 13+
+    if (androidInfo.version.sdkInt >= 33) {
+      final notificationStatus = await Permission.notification.status;
+      if (!notificationStatus.isGranted) {
+        final result = await Permission.notification.request();
+        if (!result.isGranted) {
+          return false;
+        }
+      }
+    }
+
+    final locationStatus = await Permission.locationAlways.status;
+    if (!locationStatus.isGranted) {
+      return false;
+    }
+
+    // If Android 13+, make sure notification permission still granted
+    if (androidInfo.version.sdkInt >= 33) {
+      final notificationStatus = await Permission.notification.isGranted;
+      return notificationStatus && locationStatus.isGranted;
+    }
+
+    return locationStatus.isGranted;
+  }
+
+  Future<void> _initializeAndStartServices() async {
+    try {
       final user = ref.read(userDataProvider).valueOrNull;
       final packageInfo = await PackageInfo.fromPlatform();
       final credentials = ref.read(credentialsProvider);
@@ -43,53 +94,37 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
       final deviceName = ref.read(deviceNameProvider);
       final deviceId = ref.read(deviceIdProvider);
 
-      // CEK PERMISSION DULU SEBELUM APA-APA
-      final locationStatus = await Permission.locationAlways.status;
-
-      final hasPermission = locationStatus.isGranted;
-
-      if (!hasPermission) {
-        printIfDebug("Permission belum granted secara penuh (locationAlways)");
-        return; // GAGALIN PROSES SELANJUTNYA
-      }
+      await ref
+          .read(uniguardServiceProvider)
+          .initialize(
+            headers: {
+              "x-app-build": buildCode,
+              'x-device-name': deviceName ?? '',
+              'x-device-uid': deviceId ?? '',
+              'Authorization': credentials ?? '',
+            },
+          );
 
       try {
-        await ref
-            .read(uniguardServiceProvider)
-            .initialize(
-              headers: {
-                "x-app-build": buildCode,
-                'x-device-name': deviceName ?? '',
-                'x-device-uid': deviceId ?? '',
-                'Authorization': credentials ?? '',
-              },
-            )
-            .then((_) async {
-              // Start beacon service if possible
-              try {
-                await ref.read(uniguardServiceProvider).startBeaconService();
-              } catch (e) {
-                printIfDebug('Failed to start beacon service: $e');
-              }
-
-              // Start location service independently if user has GPS tracking enabled
-              if (user != null && user.parentBranch.gpsTrackingEnabled) {
-                try {
-                  await ref
-                      .read(uniguardServiceProvider)
-                      .startLocationUploadService(
-                        interval: user.parentBranch.gpsInterval * 1000,
-                      );
-                } catch (e) {
-                  printIfDebug('Failed to start location service: $e');
-                }
-              }
-            });
+        await ref.read(uniguardServiceProvider).startBeaconService();
       } catch (e) {
-        printIfDebug('Error initializing beacon service: $e');
+        printIfDebug('Failed to start beacon service: $e');
       }
-    });
-    // }
+
+      if (user != null && user.parentBranch.gpsTrackingEnabled) {
+        try {
+          await ref
+              .read(uniguardServiceProvider)
+              .startLocationUploadService(
+                interval: user.parentBranch.gpsInterval * 1000,
+              );
+        } catch (e) {
+          printIfDebug('Failed to start location service: $e');
+        }
+      }
+    } catch (e) {
+      printIfDebug('Error initializing services: $e');
+    }
   }
 
   @override
