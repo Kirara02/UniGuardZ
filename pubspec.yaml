@@ -1,7 +1,12 @@
 name: ugz_app
 description: "A new Flutter project."
 publish_to: "none"
-version: 0.1.8+18
+
+# Internal Test
+#version: 0.1.8+18
+
+# Production
+version: 1.0.0+20
 
 environment:
   sdk: ^3.7.0

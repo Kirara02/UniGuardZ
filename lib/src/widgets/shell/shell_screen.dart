@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:badges/badges.dart' as badges;
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:ugz_app/src/constants/colors.dart';
 import 'package:ugz_app/src/constants/gen/assets.gen.dart';
 import 'package:ugz_app/src/features/auth/providers/user_data_provider.dart';
@@ -32,53 +33,63 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
   void initState() {
     super.initState();
 
-    if (!kDebugMode) {
-      WidgetsFlutterBinding.ensureInitialized().addPostFrameCallback((_) async {
-        // Initialize and start beacon service
-        final user = ref.read(userDataProvider).valueOrNull;
-        final packageInfo = await PackageInfo.fromPlatform();
-        final credentials = ref.read(credentialsProvider);
-        final buildCode = packageInfo.buildNumber;
-        final deviceName = ref.read(deviceNameProvider);
-        final deviceId = ref.read(deviceIdProvider);
+    // if (!kDebugMode) {
+    WidgetsFlutterBinding.ensureInitialized().addPostFrameCallback((_) async {
+      // Initialize and start beacon service
+      final user = ref.read(userDataProvider).valueOrNull;
+      final packageInfo = await PackageInfo.fromPlatform();
+      final credentials = ref.read(credentialsProvider);
+      final buildCode = packageInfo.buildNumber;
+      final deviceName = ref.read(deviceNameProvider);
+      final deviceId = ref.read(deviceIdProvider);
 
-        try {
-          await ref
-              .read(uniguardServiceProvider)
-              .initialize(
-                headers: {
-                  "x-app-build": buildCode,
-                  'x-device-name': deviceName ?? '',
-                  'x-device-uid': deviceId ?? '',
-                  'Authorization': credentials ?? '',
-                },
-              )
-              .then((_) async {
-                // Start beacon service if possible
+      // CEK PERMISSION DULU SEBELUM APA-APA
+      final locationStatus = await Permission.locationAlways.status;
+
+      final hasPermission = locationStatus.isGranted;
+
+      if (!hasPermission) {
+        printIfDebug("Permission belum granted secara penuh (locationAlways)");
+        return; // GAGALIN PROSES SELANJUTNYA
+      }
+
+      try {
+        await ref
+            .read(uniguardServiceProvider)
+            .initialize(
+              headers: {
+                "x-app-build": buildCode,
+                'x-device-name': deviceName ?? '',
+                'x-device-uid': deviceId ?? '',
+                'Authorization': credentials ?? '',
+              },
+            )
+            .then((_) async {
+              // Start beacon service if possible
+              try {
+                await ref.read(uniguardServiceProvider).startBeaconService();
+              } catch (e) {
+                printIfDebug('Failed to start beacon service: $e');
+              }
+
+              // Start location service independently if user has GPS tracking enabled
+              if (user != null && user.parentBranch.gpsTrackingEnabled) {
                 try {
-                  await ref.read(uniguardServiceProvider).startBeaconService();
+                  await ref
+                      .read(uniguardServiceProvider)
+                      .startLocationUploadService(
+                        interval: user.parentBranch.gpsInterval * 1000,
+                      );
                 } catch (e) {
-                  printIfDebug('Failed to start beacon service: $e');
+                  printIfDebug('Failed to start location service: $e');
                 }
-
-                // Start location service independently if user has GPS tracking enabled
-                if (user != null && user.parentBranch.gpsTrackingEnabled) {
-                  try {
-                    await ref
-                        .read(uniguardServiceProvider)
-                        .startLocationUploadService(
-                          interval: user.parentBranch.gpsInterval * 1000,
-                        );
-                  } catch (e) {
-                    printIfDebug('Failed to start location service: $e');
-                  }
-                }
-              });
-        } catch (e) {
-          printIfDebug('Error initializing beacon service: $e');
-        }
-      });
-    }
+              }
+            });
+      } catch (e) {
+        printIfDebug('Error initializing beacon service: $e');
+      }
+    });
+    // }
   }
 
   @override
