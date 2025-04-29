@@ -14,7 +14,11 @@ enum DBKeys {
   alarmId(null),
   buildCode(0),
   deviceId(null),
-  deviceName(null);
+  deviceName(null),
+  privacyPolicy(false),
+  privacyPolicyUrl(
+    "https://sites.google.com/view/uniguard-indonesia/halaman-muka",
+  );
 
   const DBKeys(this.initial);
 

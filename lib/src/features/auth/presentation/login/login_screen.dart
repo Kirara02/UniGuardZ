@@ -11,11 +11,13 @@ import 'package:ugz_app/src/features/auth/providers/user_data_provider.dart';
 import 'package:ugz_app/src/features/auth/widgets/ug_text_field.dart';
 import 'package:ugz_app/src/routes/router_config.dart';
 import 'package:ugz_app/src/utils/extensions/custom_extensions.dart';
+import 'package:ugz_app/src/utils/launch_url_in_web.dart';
 import 'package:ugz_app/src/utils/misc/print.dart';
 import 'package:ugz_app/src/utils/misc/toast/toast.dart';
 import 'package:ugz_app/src/widgets/custom_button.dart';
 import 'package:ugz_app/src/widgets/dialog/exit_app_dialog.dart';
 import 'package:ugz_app/src/widgets/dialog/loading_dialog.dart';
+import 'package:ugz_app/src/global_providers/global_providers.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -257,7 +259,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     if (!isLocationAlwaysGranted && mounted) {
       await _showPermissionDialog(
         message:
-            "GPS Background permission: Uniguard collects location data to enable tracking even when the app is in the background. Background access is not enabled. Location tracking may be negatively impacted.",
+            "UniGuard requires background location access for:\n\n"
+            "1. Real-time position tracking\n"
+            "2. Security and attendance monitoring\n"
+            "3. Periodic location reporting\n\n"
+            "Your location data will be used solely for this application's purposes and will not be shared with third parties without your consent.\n\n"
+            "Do you agree to grant background location access?",
         onFix: _requestLocationsAlwaysPermissions,
       );
     }
@@ -371,11 +378,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       _isPermissionDialogVisible = true;
       showDialog(
         context: context,
+        barrierDismissible: false,
         builder: (context) {
           return AlertDialog(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(4),
             ),
+
             content: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -401,10 +410,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               ),
               TextButton(
                 onPressed: () async {
-                  Navigator.of(context).pop(); // Tutup dialog
+                  Navigator.of(context).pop(); // Close dialog
                   _isPermissionDialogVisible = false;
 
-                  await onFix(); // Perbaiki izin
+                  await onFix(); // Fix permission
                 },
                 child: const Text("Allow"),
               ),
@@ -415,9 +424,112 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     }
   }
 
+  Future<void> _showPrivacyPolicyDialog() async {
+    final privacyPolicyUrl = ref.read(privacyPoliceUrlProvider);
+    bool isAccepted = false;
+
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Privacy Policy'),
+              content: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'UniGuard Privacy Policy\n\n'
+                      '1. Data Collection\n'
+                      'We collect the following information:\n'
+                      '- Location data for real-time tracking and attendance monitoring\n'
+                      '- Device information for security purposes\n'
+                      '- User credentials for authentication\n\n'
+                      '2. How We Use Your Data\n'
+                      '- Location tracking for security and attendance\n'
+                      '- Device identification for authorized access\n'
+                      '- User authentication and authorization\n\n'
+                      '3. Data Protection\n'
+                      '- All data is encrypted and stored securely\n'
+                      '- Access is restricted to authorized personnel only\n'
+                      '- Regular security audits are conducted\n\n'
+                      '4. Your Rights\n'
+                      '- Access your personal data\n'
+                      '- Request data deletion\n'
+                      '- Opt-out of location tracking\n'
+                      '- Control your privacy settings\n\n'
+                      'By using UniGuard, you agree to our privacy policy and terms of service.',
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: isAccepted,
+                          onChanged: (value) {
+                            setState(() {
+                              isAccepted = value ?? false;
+                            });
+                          },
+                        ),
+                        const Text('I agree to the privacy policy'),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () async {
+                        final toast = ref.read(toastProvider(context));
+
+                        if (privacyPolicyUrl != null) {
+                          await launchUrlInWeb(
+                            context,
+                            privacyPolicyUrl,
+                            toast,
+                          );
+                        }
+                      },
+                      child: const Text('View Full Privacy Policy'),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    if (isAccepted) {
+                      ref
+                          .read(privacyPoliceProvider.notifier)
+                          .updateState(true);
+                      Navigator.of(context).pop();
+                    } else {
+                      context.showSnackBar(
+                        'Please accept the privacy policy to continue',
+                      );
+                    }
+                  },
+                  child: const Text('Accept'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final toast = ref.watch(toastProvider(context));
+    final hasAcceptedPrivacyPolicy = ref.watch(privacyPoliceProvider) ?? false;
+
     ref.listen(userDataProvider, (previous, next) {
       if (next is AsyncData) {
         hideLoadingDialog(context);
@@ -425,9 +537,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           HomeRoute().go(context);
         }
       } else if (next is AsyncError) {
-        // hideLoadingDialog(context);
         next.showToastOnError(toast, withMicrotask: true);
-        // context.showSnackBar(next.error.toString());
       } else if (next.isLoading) {
         showLoadingDialog(context);
       }
@@ -516,18 +626,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               return null;
                             },
                           ),
-                          // const SizedBox(height: 16),
-                          // Align(
-                          //   alignment: Alignment.centerLeft,
-                          //   child: GestureDetector(
-                          //     onTap: () => ForgotPasswordRoute().push(context),
-                          //     child: Text(
-                          //       "${context.l10n!.forgot_password}?",
-                          //       style: Theme.of(context).textTheme.labelMedium!
-                          //           .copyWith(fontWeight: FontWeight.w500),
-                          //     ),
-                          //   ),
-                          // ),
                           const SizedBox(height: 16),
                           CustomButton(
                             fullwidth: true,
@@ -535,6 +633,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             onPressed: () async {
                               context.hideKeyboard();
                               if (_formKey.currentState!.validate()) {
+                                if (!hasAcceptedPrivacyPolicy) {
+                                  await _showPrivacyPolicyDialog();
+                                  if (!(ref.read(privacyPoliceProvider) ??
+                                      false)) {
+                                    return;
+                                  }
+                                }
                                 ref
                                     .read(userDataProvider.notifier)
                                     .login(

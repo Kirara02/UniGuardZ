@@ -86,5 +86,6 @@
   "history_detail_start_datetime": "Waktu Mulai",
   "history_detail_end_datetime": "Waktu Selesai",
   "history_detail_unknown_type": "Jenis tidak diketahui",
-  "history_detail_failed_load_image": "Gagal memuat gambar"
+  "history_detail_failed_load_image": "Gagal memuat gambar",
+  "errorLaunchURL": "Gagal membuka!\nMenyalin \"{url}\" ke papan klip"
 }

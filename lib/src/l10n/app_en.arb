@@ -104,5 +104,15 @@
   "history_detail_start_datetime": "Start Datetime",
   "history_detail_end_datetime": "End Datetime",
   "history_detail_unknown_type": "Unknown type",
-  "history_detail_failed_load_image": "Failed to load image"
+  "history_detail_failed_load_image": "Failed to load image",
+  "@errorLaunchURL": {
+    "description": "Error Description to show when App failed to launch an URL and copied the URL to clipboard",
+    "placeholders": {
+      "url": {
+        "example": "http://github.com",
+        "type": "String"
+      }
+    }
+  },
+  "errorLaunchURL": "Failed to open!\nCopying \"{url}\" to clipboard"
 }

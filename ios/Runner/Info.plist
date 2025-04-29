@@ -84,5 +84,9 @@
 	<string>We need Bluetooth to detect nearby beacons.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>We need Bluetooth to detect nearby beacons.</string>
+	<key>LSApplicationQueriesSchemes</key>
+    <array>
+      <string>https</string>
+    </array>
 </dict>
 </plist>

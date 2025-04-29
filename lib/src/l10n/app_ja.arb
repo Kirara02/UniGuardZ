@@ -86,5 +86,6 @@
   "history_detail_start_datetime": "開始時間",
   "history_detail_end_datetime": "終了時間",
   "history_detail_unknown_type": "不明なタイプ",
-  "history_detail_failed_load_image": "画像の読み込みに失敗しました"
+  "history_detail_failed_load_image": "画像の読み込みに失敗しました",
+  "errorLaunchURL": "開けませんでした！\n「{url}」をクリップボードにコピーしました"
 }

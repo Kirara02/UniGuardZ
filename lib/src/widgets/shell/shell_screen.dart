@@ -32,7 +32,6 @@ class ShellScreen extends ConsumerStatefulWidget {
 
 class _ShellScreenState extends ConsumerState<ShellScreen> {
   @override
-  @override
   void initState() {
     super.initState();
 
@@ -279,7 +278,12 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
                   children: [
                     Assets.images.nfcLogoWhite.image(width: 48),
                     const SizedBox(height: 4),
-                    Text("Scan", style: context.textTheme.labelLarge),
+                    Text(
+                      "Scan",
+                      style: context.textTheme.labelLarge!.copyWith(
+                        color: Colors.white,
+                      ),
+                    ),
                   ],
                 ),
               ),

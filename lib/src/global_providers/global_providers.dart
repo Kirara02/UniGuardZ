@@ -54,6 +54,24 @@ class Credentials extends _$Credentials
 }
 
 @riverpod
+class PrivacyPolice extends _$PrivacyPolice
+    with SharedPreferenceClientMixin<bool> {
+  @override
+  bool? build() => initialize(DBKeys.privacyPolicy);
+
+  void updateState(bool value) {
+    update(value);
+  }
+}
+
+@riverpod
+class PrivacyPoliceUrl extends _$PrivacyPoliceUrl
+    with SharedPreferenceClientMixin<String> {
+  @override
+  String? build() => initialize(DBKeys.privacyPolicyUrl);
+}
+
+@riverpod
 class DeviceName extends _$DeviceName with SharedPreferenceClientMixin<String> {
   @override
   String? build() => initialize(DBKeys.deviceName);
