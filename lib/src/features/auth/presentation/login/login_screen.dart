@@ -397,7 +397,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   Navigator.of(context).pop(); // Close dialog
                   _isPermissionDialogVisible = false; // Update status dialog
                 },
-                child: const Text("IGNORE"),
+                child: const Text("Deny"),
               ),
               TextButton(
                 onPressed: () async {
@@ -406,7 +406,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
                   await onFix(); // Perbaiki izin
                 },
-                child: const Text("FIX"),
+                child: const Text("Allow"),
               ),
             ],
           );
