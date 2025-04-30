@@ -16,8 +16,7 @@ abstract class ApiResponse<T> with _$ApiResponse<T> {
   factory ApiResponse.fromJson(
     Map<String, dynamic> json,
     T Function(Object? json) fromJsonT,
-  ) =>
-      _$ApiResponseFromJson(json, fromJsonT);
+  ) => _$ApiResponseFromJson(json, fromJsonT);
 }
 
 @freezed
@@ -29,6 +28,7 @@ abstract class MetaData with _$MetaData {
     int? page,
     int? limit,
     int? total_pages,
+    String? local_time,
   }) = _MetaData;
 
   factory MetaData.fromJson(Map<String, dynamic> json) =>
@@ -37,10 +37,8 @@ abstract class MetaData with _$MetaData {
 
 @freezed
 abstract class ErrorData with _$ErrorData {
-  const factory ErrorData({
-    required int code,
-    required String details,
-  }) = _ErrorData;
+  const factory ErrorData({required int code, required String details}) =
+      _ErrorData;
 
   factory ErrorData.fromJson(Map<String, dynamic> json) =>
       _$ErrorDataFromJson(json);
