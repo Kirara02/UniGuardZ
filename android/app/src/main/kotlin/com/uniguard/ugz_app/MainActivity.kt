@@ -77,12 +77,14 @@ class MainActivity: FlutterActivity() {
         }
     }
 
-    private fun startBeaconService() {
+    private fun startBeaconService(beaconAllowed: List<Map<String, Any>>) {
         if (isServiceRunning(BeaconService::class.java)) {
             return
         }
 
-        val intent = Intent(this, BeaconService::class.java)
+        val intent = Intent(this, BeaconService::class.java).apply {
+            putExtra("allowedBeacons", ArrayList(beaconAllowed))
+        }
         startService(intent)
     }
 
@@ -98,7 +100,8 @@ class MainActivity: FlutterActivity() {
                         result.success(null)
                     }
                     "startBeaconService" -> {
-                        startBeaconService()
+                        val beaconAllowed = call.argument<List<Map<String, Any>>>("beaconAllowed") ?: emptyList()
+                        startBeaconService(beaconAllowed)
                         result.success(null)
                     }
                     "stopBeaconService" -> {

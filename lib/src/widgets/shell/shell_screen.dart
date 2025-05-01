@@ -8,6 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:ugz_app/src/constants/colors.dart';
 import 'package:ugz_app/src/constants/gen/assets.gen.dart';
 import 'package:ugz_app/src/features/auth/providers/user_data_provider.dart';
+import 'package:ugz_app/src/features/home/providers/beacon_providers.dart';
 import 'package:ugz_app/src/global_providers/global_providers.dart';
 import 'package:ugz_app/src/global_providers/pending_count_providers.dart';
 import 'package:ugz_app/src/local/usecases/delete_all_pending_forms/delete_all_pending_forms.dart';
@@ -86,6 +87,10 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
 
   Future<void> _initializeAndStartServices() async {
     try {
+      final beaconProvider = ref.read(beaconsProvider.notifier);
+      // Get beacons first
+      final beacons = await beaconProvider.getBeacons();
+
       final user = ref.read(userDataProvider).valueOrNull;
       final packageInfo = await PackageInfo.fromPlatform();
       final credentials = ref.read(credentialsProvider);
@@ -105,7 +110,24 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
           );
 
       try {
-        await ref.read(uniguardServiceProvider).startBeaconService();
+        // Only proceed if there are beacons
+        if (beacons.isNotEmpty) {
+          await ref
+              .read(uniguardServiceProvider)
+              .startBeaconService(
+                beaconAllowed:
+                    beacons
+                        .map(
+                          (beacon) => <String, dynamic>{
+                            "major": beacon.majorValue,
+                            "minor": beacon.minorValue,
+                          },
+                        )
+                        .toList(),
+              );
+        } else {
+          printIfDebug('No beacons found, skipping service initialization');
+        }
       } catch (e) {
         printIfDebug('Failed to start beacon service: $e');
       }

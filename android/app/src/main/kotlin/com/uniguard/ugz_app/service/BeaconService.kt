@@ -49,6 +49,7 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var isServiceRunning = false
     private lateinit var serviceChecker: ServiceChecker
+    private var allowedBeacons = mutableListOf<Map<String, Any>>()
 
     companion object {
         private const val CHANNEL_ID = "BeaconServiceChannel"
@@ -74,6 +75,7 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
         fun isRunning(): Boolean {
             return instance?.isServiceRunning ?: false
         }
+
 
         private var instance: BeaconService? = null
     }
@@ -235,21 +237,46 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
         uploadTimer = null
     }
 
+    private fun isBeaconAllowed(major: Int, minor: Int): Boolean {
+        if (allowedBeacons.isEmpty()) {
+            logDebug("{\"status\": \"no_restrictions\", \"message\": \"No beacon restrictions set, allowing all beacons\"}")
+            return false // Change to false to prevent any beacon processing if no restrictions set
+        }
+        
+        logDebug("{\"status\": \"checking_allowed_beacons\", \"allowed_beacons\": ${allowedBeacons.toList()}}")
+        
+        val isAllowed = allowedBeacons.any { beacon ->
+            val beaconMajor = (beacon["major"] as? Number)?.toInt() ?: return@any false
+            val beaconMinor = (beacon["minor"] as? Number)?.toInt() ?: return@any false
+            beaconMajor == major && beaconMinor == minor
+        }
+        
+        logDebug("{\"status\": \"beacon_check_result\", \"major\": $major, \"minor\": $minor, \"is_allowed\": $isAllowed}")
+        return isAllowed
+    }
+
     // RangeNotifier implementation
     override fun didRangeBeaconsInRegion(beacons: Collection<Beacon>, region: Region) {
-        if (!isScanning) {
-            return
-        }
+        if (!isScanning) return
 
         if (beacons.isNotEmpty()) {
             beacons.forEach { beacon ->
                 try {
+                    val major = beacon.id2?.toInt() ?: 0
+                    val minor = beacon.id3?.toInt() ?: 0
+                    
+                    // Check if beacon is allowed before processing
+                    if (!isBeaconAllowed(major, minor)) {
+                        logDebug("{\"status\": \"beacon_skipped\", \"reason\": \"not_in_allowed_list\", \"major\": $major, \"minor\": $minor}")
+                        return@forEach
+                    }
+
                 val beaconJson = "{\n" +
                     "  \"name\": \"${beacon.bluetoothName ?: "Unknown"}\",\n" +
                     "  \"uuid\": \"${beacon.id1}\",\n" +
                     "  \"macAddress\": \"${beacon.bluetoothAddress ?: "Unknown"}\",\n" +
-                    "  \"major\": \"${beacon.id2?.toInt() ?: 0}\",\n" +
-                    "  \"minor\": \"${beacon.id3?.toInt() ?: 0}\",\n" +
+                        "  \"major\": \"$major\",\n" +
+                        "  \"minor\": \"$minor\",\n" +
                     "  \"distance\": \"${beacon.distance}\",\n" +
                     "  \"proximity\": \"${BeaconScanData.getProximityOfBeacon(beacon).value}\",\n" +
                     "  \"scanTime\": \"${System.currentTimeMillis()}\",\n" +
@@ -257,7 +284,7 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
                     "  \"txPower\": \"${beacon.txPower}\"\n" +
                     "}"
                 
-                    logDebug("Processing Beacon: $beaconJson")
+                    logDebug("Processing allowed Beacon: $beaconJson")
                 
                 // Update beacon buffer with latest data
                 val beaconKey = "${beacon.id1}-${beacon.id2}-${beacon.id3}"
@@ -265,8 +292,8 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
                     uuid = beacon.id1.toString(),
                     name = beacon.bluetoothName ?: "Unknown",
                     macAddress = beacon.bluetoothAddress ?: "Unknown",
-                    major = beacon.id2?.toInt() ?: 0,
-                    minor = beacon.id3?.toInt() ?: 0,
+                        major = major,
+                        minor = minor,
                     distance = beacon.distance,
                     txPower = beacon.txPower,
                     proximity = BeaconScanData.getProximityOfBeacon(beacon).value,
@@ -305,7 +332,8 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
                 // Upload all beacons in the buffer
                 beaconBuffer.values.forEach { beaconData ->
                     val beaconInfo = "{\"uuid\": \"${beaconData.uuid}\", \"major\": \"${beaconData.major}\", \"minor\": \"${beaconData.minor}\"}"
-                    logDebug("Uploading Beacon: $beaconInfo")
+                    
+                    logDebug("Processing allowed Beacon: $beaconInfo")
                     
                     // Get the actual beacon object from the buffer
                     val beacon = beaconBuffer.entries.find { 
@@ -345,8 +373,6 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
                     )
 
                     try {
-//                        sendNotification("Beacon: (Major:${beaconData.major}), (Minor:${beaconData.minor})")
-
                         val response = RetrofitClient.apiService.submitBeacon(request)
                         if (response.success) {
                             logDebug("{\"status\": \"upload_success\", \"beacon\": $beaconInfo, \"battery_level\": $batteryLevel}")
@@ -443,6 +469,24 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
         }
         
         try {
+            // Get allowed beacons from intent
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent?.getSerializableExtra("allowedBeacons", ArrayList::class.java)?.let { beacons ->
+                    allowedBeacons.clear()
+                    allowedBeacons.addAll(beacons.filterIsInstance<Map<String, Any>>())
+                    logDebug("{\"status\": \"beacons_updated\", \"count\": ${allowedBeacons.size}, \"beacons\": ${allowedBeacons.toList()}}")
+                }
+            } else {
+                @Suppress("DEPRECATION")
+                intent?.getSerializableExtra("allowedBeacons")?.let { beacons ->
+                    if (beacons is ArrayList<*>) {
+                        allowedBeacons.clear()
+                        allowedBeacons.addAll(beacons.filterIsInstance<Map<String, Any>>())
+                        logDebug("{\"status\": \"beacons_updated\", \"count\": ${allowedBeacons.size}, \"beacons\": ${allowedBeacons.toList()}}")
+                    }
+                }
+            }
+            
             startBeaconService()
             return START_STICKY
         } catch (e: Exception) {

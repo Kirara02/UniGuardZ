@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:ugz_app/src/features/home/data/interface/checkpoint_repository.dart';
 import 'package:ugz_app/src/features/home/domain/model/checkpoint_model.dart';
@@ -52,14 +51,6 @@ class CheckpointRepositoryImpl implements CheckpointRepository {
 
     return await _dioClient.postApiResponse(
       "mobile-api/admin/checkpoint/log",
-      options: Options(
-        headers: {
-          "Authorization": "Bearer ${params.token}",
-          "x-app-build": params.buildCode,
-          'x-device-name': params.deviceName,
-          'x-device-uid': params.deviceId,
-        },
-      ),
       data: data,
       converter: (json) => ScanNfcSubmitModel.fromJson(json),
     );
@@ -68,10 +59,6 @@ class CheckpointRepositoryImpl implements CheckpointRepository {
   @override
   Future<ApiResponse<List<CheckpointModel>>> getCheckpoints({
     required int checkpointType,
-    required String token,
-    required String buildCode,
-    required String deviceName,
-    required String deviceId,
   }) async {
     return await _dioClient.getApiListResponse<CheckpointModel>(
       "mobile-api/admin/checkpoint",

@@ -7,8 +7,8 @@ part 'checkpoint_model.freezed.dart';
 abstract class CheckpointModel with _$CheckpointModel {
   const factory CheckpointModel({
     required String id,
-    @JsonKey(name: "major_value") double? majorValue,
-    @JsonKey(name: "minor_value") double? minorValue,
+    @JsonKey(name: "major_value") int? majorValue,
+    @JsonKey(name: "minor_value") int? minorValue,
     @JsonKey(name: "checkpoint_type") required CheckpointType checkpointType,
     @JsonKey(name: "checkpoint_name") String? checkpointName,
     @JsonKey(name: "checkpoint_description") String? checkpointDescription,

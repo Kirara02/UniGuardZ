@@ -49,7 +49,7 @@ mixin SharedPreferenceClientMixin<T extends Object> {
   T? get _get {
     final value = _client.get(_key);
     if (_fromJson != null) {
-      return _fromJson!(jsonDecode(value.toString()));
+      return _fromJson(jsonDecode(value.toString()));
     }
     if (value != null && value is List) {
       // if value is List<Object> then the only possible type is List<String>
@@ -67,7 +67,7 @@ mixin SharedPreferenceClientMixin<T extends Object> {
   Future<bool> _set(T? value) async {
     if (value == null) return _client.remove(_key);
     if (_toJson != null) {
-      _client.setString(_key, jsonEncode(_toJson!(value)));
+      _client.setString(_key, jsonEncode(_toJson(value)));
     }
     if (value is bool) {
       return await _client.setBool(_key, value);
@@ -122,8 +122,6 @@ mixin SharedPreferenceEnumClientMixin<T extends Enum> {
 
   void _persistenceRefreshLogic(AutoDisposeNotifierProviderRef<T?> ref) =>
       ref.listenSelf(
-        (_, next) => _set(
-          next == null ? null : _enumList.indexOf(next),
-        ),
+        (_, next) => _set(next == null ? null : _enumList.indexOf(next)),
       );
 }

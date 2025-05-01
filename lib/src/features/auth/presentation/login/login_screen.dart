@@ -29,6 +29,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen>
     with WidgetsBindingObserver {
   bool _isActive = true;
+  bool _showPrivacyError = false;
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
@@ -427,6 +428,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   Future<void> _showPrivacyPolicyDialog() async {
     final privacyPolicyUrl = ref.read(privacyPoliceUrlProvider);
     bool isAccepted = false;
+    _showPrivacyError = false;
 
     return showDialog(
       context: context,
@@ -436,64 +438,89 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           builder: (context, setState) {
             return AlertDialog(
               title: const Text('Privacy Policy'),
-              content: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      'UniGuard Privacy Policy\n\n'
-                      '1. Data Collection\n'
-                      'We collect the following information:\n'
-                      '- Location data for real-time tracking and attendance monitoring\n'
-                      '- Device information for security purposes\n'
-                      '- User credentials for authentication\n\n'
-                      '2. How We Use Your Data\n'
-                      '- Location tracking for security and attendance\n'
-                      '- Device identification for authorized access\n'
-                      '- User authentication and authorization\n\n'
-                      '3. Data Protection\n'
-                      '- All data is encrypted and stored securely\n'
-                      '- Access is restricted to authorized personnel only\n'
-                      '- Regular security audits are conducted\n\n'
-                      '4. Your Rights\n'
-                      '- Access your personal data\n'
-                      '- Request data deletion\n'
-                      '- Opt-out of location tracking\n'
-                      '- Control your privacy settings\n\n'
-                      'By using UniGuard, you agree to our privacy policy and terms of service.',
+              content: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'UniGuard Privacy Policy\n\n'
+                            '1. Data Collection\n'
+                            'We collect the following information:\n'
+                            '- Location data for real-time tracking and attendance monitoring\n'
+                            '- Device information for security purposes\n'
+                            '- User credentials for authentication\n\n'
+                            '2. How We Use Your Data\n'
+                            '- Location tracking for security and attendance\n'
+                            '- Device identification for authorized access\n'
+                            '- User authentication and authorization\n\n'
+                            '3. Data Protection\n'
+                            '- All data is encrypted and stored securely\n'
+                            '- Access is restricted to authorized personnel only\n'
+                            '- Regular security audits are conducted\n\n'
+                            '4. Your Rights\n'
+                            '- Access your personal data\n'
+                            '- Request data deletion\n'
+                            '- Opt-out of location tracking\n'
+                            '- Control your privacy settings\n\n'
+                            'By using UniGuard, you agree to our privacy policy and terms of service.',
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Checkbox(
-                          value: isAccepted,
-                          onChanged: (value) {
-                            setState(() {
-                              isAccepted = value ?? false;
-                            });
-                          },
-                        ),
-                        const Text('I agree to the privacy policy'),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: () async {
-                        final toast = ref.read(toastProvider(context));
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: isAccepted,
+                        onChanged: (value) {
+                          setState(() {
+                            isAccepted = value ?? false;
+                            if (isAccepted) {
+                              _showPrivacyError = false;
+                            }
+                          });
+                        },
+                      ),
+                      const Text('I agree to the privacy policy'),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () async {
+                      final toast = ref.read(toastProvider(context));
 
-                        if (privacyPolicyUrl != null) {
-                          await launchUrlInWeb(
-                            context,
-                            privacyPolicyUrl,
-                            toast,
-                          );
-                        }
+                      if (privacyPolicyUrl != null) {
+                        await launchUrlInWeb(context, privacyPolicyUrl, toast);
+                      }
+                    },
+                    child: const Text('View Full Privacy Policy'),
+                  ),
+                  if (_showPrivacyError)
+                    TweenAnimationBuilder<double>(
+                      duration: const Duration(milliseconds: 300),
+                      tween: Tween(begin: 0.0, end: 1.0),
+                      builder: (context, value, child) {
+                        return Opacity(
+                          opacity: value,
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              'Please accept the privacy policy to continue',
+                              style: context.textTheme.labelSmall!.copyWith(
+                                color: Colors.red,
+                              ),
+                            ),
+                          ),
+                        );
                       },
-                      child: const Text('View Full Privacy Policy'),
                     ),
-                  ],
-                ),
+                ],
               ),
               actions: [
                 TextButton(
@@ -510,9 +537,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           .updateState(true);
                       Navigator.of(context).pop();
                     } else {
-                      context.showSnackBar(
-                        'Please accept the privacy policy to continue',
-                      );
+                      setState(() {
+                        _showPrivacyError = true;
+                      });
                     }
                   },
                   child: const Text('Accept'),

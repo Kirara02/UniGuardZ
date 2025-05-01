@@ -11,6 +11,7 @@ import 'package:ugz_app/src/channel/uniguard_service.dart';
 import 'package:ugz_app/src/local/db/uniguard_db.dart';
 import 'package:ugz_app/src/utils/extensions/custom_extensions.dart';
 import 'package:ugz_app/src/utils/mixin/shared_preferences_client_mixin.dart';
+import 'package:ugz_app/src/utils/mixin/shared_preferences_mixin.dart';
 import 'package:ugz_app/src/utils/storage/dio/dio_client.dart';
 import 'package:ugz_app/src/utils/storage/dio/network_module.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -66,9 +67,21 @@ class PrivacyPolice extends _$PrivacyPolice
 
 @riverpod
 class PrivacyPoliceUrl extends _$PrivacyPoliceUrl
-    with SharedPreferenceClientMixin<String> {
+    with SharedPreferenceMixin<String> {
   @override
-  String? build() => initialize(DBKeys.privacyPolicyUrl);
+  String? build() {
+    final prefs = ref.watch(sharedPreferencesProvider);
+    final initial = initialize(prefs, DBKeys.privacyPolicyUrl);
+
+    listenSelf((prev, next) {
+      persist(next);
+    });
+
+    return initial;
+  }
+
+  @override
+  void update(String? value) => state = value;
 }
 
 @riverpod

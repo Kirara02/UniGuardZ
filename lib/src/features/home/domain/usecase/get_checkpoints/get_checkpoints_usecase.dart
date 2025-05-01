@@ -21,10 +21,6 @@ class GetCheckpoints
   ) async {
     final response = await _checkpointRepository.getCheckpoints(
       checkpointType: params.checkpointType,
-      token: params.token,
-      deviceId: params.deviceId,
-      deviceName: params.deviceName,
-      buildCode: params.buildCode,
     );
 
     if (response.success && response.data != null) {

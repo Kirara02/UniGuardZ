@@ -65,25 +65,28 @@ class ListItem extends ConsumerWidget {
               child: _buildIcon(),
             ),
             const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: context.textTheme.titleSmall!.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                if (subtitle != null && subtitle!.isNotEmpty)
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    subtitle!,
-                    style: context.textTheme.labelSmall!.copyWith(
-                      color: context.colorScheme.outline,
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: context.textTheme.bodyMedium!.copyWith(
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-              ],
+                  if (subtitle != null && subtitle!.isNotEmpty)
+                    Text(
+                      subtitle!,
+                      style: context.textTheme.labelSmall!.copyWith(
+                        color: context.colorScheme.outline,
+                      ),
+                    ),
+                ],
+              ),
             ),
-            const Spacer(),
             if (suffix != null)
               suffix!
             else

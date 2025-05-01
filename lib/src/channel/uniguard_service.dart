@@ -6,9 +6,6 @@ class UniguardService {
     'com.uniguard.ugz_app/uniguard_service',
   );
 
-  /// Initialize the service with API headers
-  ///
-  /// [headers] - API headers including authentication tokens
   Future<void> initialize({required Map<String, String> headers}) async {
     try {
       printIfDebug('Initializing service with headers...');
@@ -35,7 +32,9 @@ class UniguardService {
   }
 
   /// Start the beacon scanning service
-  Future<void> startBeaconService() async {
+  Future<void> startBeaconService({
+    required List<Map<String, dynamic>> beaconAllowed,
+  }) async {
     try {
       // Check if service is already running
       final bool isRunning = await isBeaconServiceRunning();
@@ -45,7 +44,9 @@ class UniguardService {
       }
 
       printIfDebug('Starting beacon service...');
-      await platform.invokeMethod('startBeaconService');
+      await platform.invokeMethod('startBeaconService', {
+        'beaconAllowed': beaconAllowed,
+      });
 
       // Verify service started successfully
       final bool started = await isBeaconServiceRunning();

@@ -4,9 +4,9 @@ import 'package:dio/dio.dart';
 import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 import 'package:dio_cache_interceptor_hive_store/dio_cache_interceptor_hive_store.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:ugz_app/src/global_providers/global_providers.dart';
 import 'package:ugz_app/src/utils/storage/dio/http_request_interceptor.dart';
 
 import '../../../constants/endpoint.dart';
@@ -32,7 +32,7 @@ class DioNetworkModule {
     bool addPort = true,
     required AuthType authType,
     HiveCacheStore? hiveCacheStore,
-    required DioClientKeyRef ref,
+    required Ref ref,
   }) {
     final cacheOptions = CacheOptions(
       store: hiveCacheStore,

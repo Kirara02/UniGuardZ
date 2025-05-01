@@ -228,25 +228,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               child: icon,
                             ),
                             const Gap(16),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  activity.referenceName,
-                                  style: context.textTheme.bodyLarge,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  DateFormat('dd MMM yyyy, hh:mm a').format(
-                                    DateTime.parse(
-                                      activity.originalSubmittedTime,
-                                    ).toLocal(),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    activity.referenceName,
+                                    maxLines: 1,
+                                    style: context.textTheme.bodyMedium!
+                                        .copyWith(
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
                                   ),
-                                  style: context.textTheme.bodySmall!.copyWith(
-                                    color: context.colorScheme.outline,
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    DateFormat('dd MMM yyyy, hh:mm a').format(
+                                      DateTime.parse(
+                                        activity.originalSubmittedTime,
+                                      ).toLocal(),
+                                    ),
+                                    style: context.textTheme.bodySmall!
+                                        .copyWith(
+                                          color: context.colorScheme.outline,
+                                        ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ],
                         ),

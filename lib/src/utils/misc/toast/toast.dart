@@ -21,10 +21,12 @@ class Toast {
 
   void show(String msg, {bool withMicrotask = false}) {
     if (withMicrotask) {
-      Future.microtask(() => _fToast.showToast(
-            child: ToastWidget(text: msg),
-            gravity: ToastGravity.BOTTOM,
-          ));
+      Future.microtask(
+        () => _fToast.showToast(
+          child: ToastWidget(text: msg),
+          gravity: ToastGravity.BOTTOM,
+        ),
+      );
     } else {
       _fToast.showToast(
         child: ToastWidget(text: msg),
@@ -34,12 +36,9 @@ class Toast {
   }
 
   void showError(String error) => _fToast.showToast(
-        child: ToastWidget(
-          text: error,
-          backgroundColor: Colors.red.shade400,
-        ),
-        gravity: ToastGravity.TOP,
-      );
+    child: ToastWidget(text: error, backgroundColor: Colors.red.shade400),
+    gravity: ToastGravity.TOP,
+  );
 
   void close() => _fToast.removeCustomToast();
 }
@@ -69,18 +68,13 @@ class ToastWidget extends StatelessWidget {
         borderRadius: KBorderRadius.r16.radius,
         color: backgroundColor ?? Colors.black54,
       ),
-      child: icon != null
-          ? Row(
-              children: [
-                icon!,
-                const Gap(16),
-                textWidget,
-              ],
-            )
-          : textWidget,
+      child:
+          icon != null
+              ? Row(children: [icon!, const Gap(16), textWidget])
+              : textWidget,
     );
   }
 }
 
 @riverpod
-Toast toast(ToastRef ref, BuildContext context) => Toast(context);
+Toast toast(ref, BuildContext context) => Toast(context);

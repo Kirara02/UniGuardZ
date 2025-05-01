@@ -10,9 +10,5 @@ abstract interface class CheckpointRepository {
 
   Future<ApiResponse<List<CheckpointModel>>> getCheckpoints({
     required int checkpointType,
-    required String token,
-    required String buildCode,
-    required String deviceName,
-    required String deviceId,
   });
 }
