@@ -1,17 +1,19 @@
 import Foundation
 import CoreLocation
-import Combine
+import UserNotifications
+import BackgroundTasks
 
 class LocationService: NSObject, CLLocationManagerDelegate {
     static let shared = LocationService()
     
     private let locationManager = CLLocationManager()
-    private var timer: Timer?
+    private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
     private var isServiceRunning = false
     private var uploadInterval: TimeInterval = 300 // Default 5 minutes
     private var lastUploadedLocation: CLLocation?
     private let MIN_DISTANCE_FILTER: CLLocationDistance = 10 // 10 meters
     private let MIN_TIME_INTERVAL: TimeInterval = 60 // 1 minute
+    private var backgroundTimer: Timer?
     
     private override init() {
         super.init()
@@ -21,10 +23,105 @@ class LocationService: NSObject, CLLocationManagerDelegate {
         locationManager.pausesLocationUpdatesAutomatically = false
         locationManager.distanceFilter = MIN_DISTANCE_FILTER
         locationManager.activityType = .other
+        setupNotifications()
+        setupBackgroundTask()
+    }
+    
+    private func setupBackgroundTask() {
+        // Register background task
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.uniguard.uniguardz.location_update", using: nil) { task in
+            self.handleBackgroundTask(task: task as! BGProcessingTask)
+        }
+    }
+    
+    private func handleBackgroundTask(task: BGProcessingTask) {
+        // Schedule the next background task
+        scheduleBackgroundTask()
+        
+        // Start a background task
+        backgroundTask = UIApplication.shared.beginBackgroundTask { [weak self] in
+            self?.endBackgroundTask()
+        }
+        
+        // Start location updates
+        locationManager.startUpdatingLocation()
+        
+        // End the background task after a reasonable time
+        DispatchQueue.main.asyncAfter(deadline: .now() + 25) { [weak self] in
+            self?.endBackgroundTask()
+            task.setTaskCompleted(success: true)
+        }
+    }
+    
+    private func scheduleBackgroundTask() {
+        let request = BGProcessingTaskRequest(identifier: "com.uniguard.uniguardz.location_update")
+        request.earliestBeginDate = Date(timeIntervalSinceNow: 300) // 5 minutes from now
+        request.requiresNetworkConnectivity = true
+        request.requiresExternalPower = false
+        
+        do {
+            try BGTaskScheduler.shared.submit(request)
+        } catch {
+            logError("Could not schedule background task: \(error.localizedDescription)")
+        }
+    }
+    
+    private func startBackgroundTask() {
+        backgroundTask = UIApplication.shared.beginBackgroundTask { [weak self] in
+            self?.endBackgroundTask()
+        }
+        
+        // Start background timer
+        backgroundTimer = Timer.scheduledTimer(withTimeInterval: uploadInterval, repeats: true) { [weak self] _ in
+            self?.uploadLocation()
+        }
+    }
+    
+    private func endBackgroundTask() {
+        backgroundTimer?.invalidate()
+        backgroundTimer = nil
+        
+        if backgroundTask != .invalid {
+            UIApplication.shared.endBackgroundTask(backgroundTask)
+            backgroundTask = .invalid
+        }
+    }
+    
+    private func setupNotifications() {
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+            if let error = error {
+                self.logError("Failed to request notification authorization: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    private func createNotification() {
+        let content = UNMutableNotificationContent()
+        content.title = "Location Service"
+        content.body = "Uploading location data"
+        content.sound = .default
+        
+        let request = UNNotificationRequest(
+            identifier: "location_service_notification",
+            content: content,
+            trigger: nil
+        )
+        
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                self.logError("Failed to show notification: \(error.localizedDescription)")
+            }
+        }
     }
     
     func startService(interval: TimeInterval = 300) {
         guard !isServiceRunning else { return }
+        
+        if !ServiceChecker.shared.canStartLocationService() {
+            logError("Cannot start location service - Missing permissions or location disabled")
+            return
+        }
         
         uploadInterval = interval
         locationManager.requestAlwaysAuthorization()
@@ -35,10 +132,14 @@ class LocationService: NSObject, CLLocationManagerDelegate {
         // Start standard location updates
         locationManager.startUpdatingLocation()
         
-        // Start timer to upload location based on the provided interval
-        timer = Timer.scheduledTimer(withTimeInterval: uploadInterval, repeats: true) { [weak self] _ in
-            self?.uploadLocation()
-        }
+        // Start background task
+        startBackgroundTask()
+        
+        // Schedule background task
+        scheduleBackgroundTask()
+        
+        // Show notification
+        createNotification()
         
         isServiceRunning = true
     }
@@ -48,8 +149,12 @@ class LocationService: NSObject, CLLocationManagerDelegate {
         
         locationManager.stopMonitoringSignificantLocationChanges()
         locationManager.stopUpdatingLocation()
-        timer?.invalidate()
-        timer = nil
+        
+        // Stop background task
+        endBackgroundTask()
+        
+        // Remove notification
+        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
         
         isServiceRunning = false
     }
@@ -78,10 +183,10 @@ class LocationService: NSObject, CLLocationManagerDelegate {
         API.APIClient.shared.submitLocation(locationData) { result in
             switch result {
             case .success:
-                print("Location uploaded successfully")
+                self.logDebug("Location uploaded successfully")
                 self.lastUploadedLocation = location
             case .failure(let error):
-                print("Failed to upload location: \(error)")
+                self.logError("Failed to upload location: \(error.localizedDescription)")
             }
         }
     }
@@ -104,24 +209,19 @@ class LocationService: NSObject, CLLocationManagerDelegate {
         }
     }
     
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        // Check if we should upload based on significant location change
-        if let location = locations.last {
-            if let lastLocation = lastUploadedLocation {
-                let distance = location.distance(from: lastLocation)
-                let timeInterval = location.timestamp.timeIntervalSince(lastLocation.timestamp)
-                
-                if distance >= MIN_DISTANCE_FILTER || timeInterval >= MIN_TIME_INTERVAL {
-                    uploadLocation()
-                }
-            } else {
-                // First location update
-                uploadLocation()
-            }
-        }
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        logError("Location manager error: \(error.localizedDescription)")
     }
     
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print("Location manager failed with error: \(error)")
+    // MARK: - Logging
+    
+    private func logDebug(_ message: String) {
+        #if DEBUG
+        print("[LocationService] \(message)")
+        #endif
+    }
+    
+    private func logError(_ message: String) {
+        print("[LocationService] ERROR: \(message)")
     }
 } 

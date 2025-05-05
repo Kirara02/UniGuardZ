@@ -5,6 +5,8 @@
     <key>BGTaskSchedulerPermittedIdentifiers</key>
     <array>
         <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+        <string>com.uniguard.uniguardz.beacon_scan</string>
+        <string>com.uniguard.uniguardz.location_update</string>
     </array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
@@ -42,13 +44,13 @@
 	<key>NSCameraUsageDescription</key>
 	<string>UniGuardZ allows you to attach photos to incident forms and requires access your camera.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>UniGuardZ uses your location to provide location information for submitting alarms &amp; events and scanning checkpoints through beacons. </string>
+	<string>UniGuardZ uses your location to provide location information for submitting alarms &amp; events and scanning checkpoints through beacons. Location access is required to run in the background.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
-	<string>UniGuardZ uses your location to provide location information for submitting alarms &amp; events and scanning checkpoints through beacons. </string>
+	<string>UniGuardZ uses your location to provide location information for submitting alarms &amp; events and scanning checkpoints through beacons. Location access is required to run in the background.</string>
 	<key>NSLocationUsageDescription</key>
-	<string>UniGuardZ uses your location to provide location information for submitting alarms &amp; events and scanning checkpoints through beacons. </string>
+	<string>UniGuardZ uses your location to provide location information for submitting alarms &amp; events and scanning checkpoints through beacons. Location access is required to run in the background.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>UniGuardZ uses your location to provide location information for submitting alarms &amp; events and scanning checkpoints through beacons. </string>
+	<string>UniGuardZ uses your location to provide location information for submitting alarms &amp; events and scanning checkpoints through beacons. Location access is required to run in the background.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>UniGuardZ would like to access your devices photos in order for you to be able to add photos to forms and tasks.</string>
 	<key>NSWidgetWantsLocation</key>
@@ -62,6 +64,7 @@
 		<string>processing</string>
 		<string>bluetooth-central</string>
 		<string>bluetooth-peripheral</string>
+		<string>remote-notification</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
@@ -81,9 +84,9 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>We need Bluetooth to detect nearby beacons.</string>
+	<string>We need Bluetooth to detect nearby beacons. Bluetooth access is required to run in the background.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
-	<string>We need Bluetooth to detect nearby beacons.</string>
+	<string>We need Bluetooth to detect nearby beacons. Bluetooth access is required to run in the background.</string>
 	<key>LSApplicationQueriesSchemes</key>
     <array>
       <string>https</string>

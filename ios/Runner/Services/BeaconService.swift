@@ -1,16 +1,21 @@
 import Foundation
 import CoreLocation
 import CoreBluetooth
+import UserNotifications
+import BackgroundTasks
 
 class BeaconService: NSObject, CLLocationManagerDelegate, CBPeripheralManagerDelegate {
     private let locationManager = CLLocationManager()
     private var peripheralManager: CBPeripheralManager?
     private var isScanning = false
     private var beaconBuffer: [String: Models.BeaconScanData] = [:]
-    private var uploadTimer: Timer?
+    private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
     private let UPLOAD_INTERVAL: TimeInterval = 60 // 1 minute
     private let SCAN_INTERVAL: TimeInterval = 1.1 // 1.1 seconds
     private var currentLocation: CLLocation?
+    private var isServiceRunning = false
+    private var allowedBeacons: [[String: Any]] = []
+    private var backgroundTimer: Timer?
     
     static let shared = BeaconService()
     
@@ -18,10 +23,105 @@ class BeaconService: NSObject, CLLocationManagerDelegate, CBPeripheralManagerDel
         super.init()
         locationManager.delegate = self
         peripheralManager = CBPeripheralManager(delegate: self, queue: nil)
+        setupNotifications()
+        setupBackgroundTask()
+    }
+    
+    private func setupBackgroundTask() {
+        // Register background task
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.uniguard.uniguardz.beacon_scan", using: nil) { task in
+            self.handleBackgroundTask(task: task as! BGProcessingTask)
+        }
+    }
+    
+    private func handleBackgroundTask(task: BGProcessingTask) {
+        // Schedule the next background task
+        scheduleBackgroundTask()
+        
+        // Start a background task
+        backgroundTask = UIApplication.shared.beginBackgroundTask { [weak self] in
+            self?.endBackgroundTask()
+        }
+        
+        // Start scanning
+        startScanning()
+        
+        // End the background task after a reasonable time
+        DispatchQueue.main.asyncAfter(deadline: .now() + 25) { [weak self] in
+            self?.endBackgroundTask()
+            task.setTaskCompleted(success: true)
+        }
+    }
+    
+    private func scheduleBackgroundTask() {
+        let request = BGProcessingTaskRequest(identifier: "com.uniguard.uniguardz.beacon_scan")
+        request.earliestBeginDate = Date(timeIntervalSinceNow: 60) // 1 minute from now
+        request.requiresNetworkConnectivity = true
+        request.requiresExternalPower = false
+        
+        do {
+            try BGTaskScheduler.shared.submit(request)
+        } catch {
+            logError("Could not schedule background task: \(error.localizedDescription)")
+        }
+    }
+    
+    private func startBackgroundTask() {
+        backgroundTask = UIApplication.shared.beginBackgroundTask { [weak self] in
+            self?.endBackgroundTask()
+        }
+        
+        // Start background timer
+        backgroundTimer = Timer.scheduledTimer(withTimeInterval: UPLOAD_INTERVAL, repeats: true) { [weak self] _ in
+            self?.uploadBufferedBeacons()
+        }
+    }
+    
+    private func endBackgroundTask() {
+        backgroundTimer?.invalidate()
+        backgroundTimer = nil
+        
+        if backgroundTask != .invalid {
+            UIApplication.shared.endBackgroundTask(backgroundTask)
+            backgroundTask = .invalid
+        }
+    }
+    
+    private func setupNotifications() {
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+            if let error = error {
+                self.logError("Failed to request notification authorization: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    private func createNotification() {
+        let content = UNMutableNotificationContent()
+        content.title = "Beacon Service"
+        content.body = "Scanning for beacons"
+        content.sound = .default
+        
+        let request = UNNotificationRequest(
+            identifier: "beacon_service_notification",
+            content: content,
+            trigger: nil
+        )
+        
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                self.logError("Failed to show notification: \(error.localizedDescription)")
+            }
+        }
     }
     
     func startService() {
-        guard !isScanning else { return }
+        guard !isServiceRunning else { return }
+        
+        if !ServiceChecker.shared.canStartBeaconService() {
+            logError("Cannot start beacon service - Missing permissions or services disabled")
+            return
+        }
         
         // Request location permission
         locationManager.requestAlwaysAuthorization()
@@ -48,14 +148,21 @@ class BeaconService: NSObject, CLLocationManagerDelegate, CBPeripheralManagerDel
         locationManager.startRangingBeacons(satisfying: region)
         locationManager.startMonitoring(for: region)
         
-        // Start upload timer
-        startUploadTimer()
+        // Start background task
+        startBackgroundTask()
         
+        // Schedule background task
+        scheduleBackgroundTask()
+        
+        // Show notification
+        createNotification()
+        
+        isServiceRunning = true
         isScanning = true
     }
     
     func stopService() {
-        guard isScanning else { return }
+        guard isServiceRunning else { return }
         
         // Stop location updates
         locationManager.stopUpdatingLocation()
@@ -66,24 +173,17 @@ class BeaconService: NSObject, CLLocationManagerDelegate, CBPeripheralManagerDel
         locationManager.stopRangingBeacons(satisfying: region)
         locationManager.stopMonitoring(for: region)
         
-        // Stop upload timer
-        stopUploadTimer()
+        // Stop background task
+        endBackgroundTask()
         
         // Clear buffer
         beaconBuffer.removeAll()
         
+        // Remove notification
+        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+        
+        isServiceRunning = false
         isScanning = false
-    }
-    
-    private func startUploadTimer() {
-        uploadTimer = Timer.scheduledTimer(withTimeInterval: UPLOAD_INTERVAL, repeats: true) { [weak self] _ in
-            self?.uploadBufferedBeacons()
-        }
-    }
-    
-    private func stopUploadTimer() {
-        uploadTimer?.invalidate()
-        uploadTimer = nil
     }
     
     private func uploadBufferedBeacons() {
@@ -94,20 +194,21 @@ class BeaconService: NSObject, CLLocationManagerDelegate, CBPeripheralManagerDel
                 type: "beacon",
                 latitude: location.coordinate.latitude,
                 longitude: location.coordinate.longitude,
-                timestamp: Date().timeIntervalSince1970 * 1000,
+                timestamp: Int(Date().timeIntervalSince1970 * 1000),
                 beacon: Models.BeaconData(
                     majorValue: beaconData.major,
                     minorValue: beaconData.minor,
-                    batteryLevel: 0 // Battery level not available in iOS
+                    rssi: beaconData.rssi,
+                    batteryLevel: beaconData.batteryLevel
                 )
             )
             
-            Task {
-                do {
-                    try await API.APIClient.shared.submitBeacon(beaconRequest)
-                    print("Beacon uploaded successfully")
-                } catch {
-                    print("Failed to upload beacon: \(error)")
+            API.APIClient.shared.submitBeacon(beaconRequest) { result in
+                switch result {
+                case .success:
+                    self.logDebug("Beacon data uploaded successfully")
+                case .failure(let error):
+                    self.logError("Failed to upload beacon data: \(error.localizedDescription)")
                 }
             }
         }
@@ -118,27 +219,36 @@ class BeaconService: NSObject, CLLocationManagerDelegate, CBPeripheralManagerDel
     
     // MARK: - CLLocationManagerDelegate
     
-    func locationManager(_ manager: CLLocationManager, didRangeBeacons beacons: [CLBeacon], in region: CLBeaconRegion) {
-        for beacon in beacons {
-            let beaconKey = "\(beacon.uuid)-\(beacon.major)-\(beacon.minor)"
-            let beaconData = Models.BeaconScanData(
-                uuid: beacon.uuid.uuidString,
-                major: beacon.major.intValue,
-                minor: beacon.minor.intValue,
-                rssi: beacon.rssi,
-                proximity: beacon.proximity.rawValue,
-                timestamp: Date().timeIntervalSince1970 * 1000
-            )
-            beaconBuffer[beaconKey] = beaconData
-        }
-    }
-    
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         currentLocation = locations.last
     }
     
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print("Location manager error: \(error.localizedDescription)")
+    func locationManager(_ manager: CLLocationManager, didRangeBeacons beacons: [CLBeacon], in region: CLBeaconRegion) {
+        for beacon in beacons {
+            let key = "\(beacon.major)-\(beacon.minor)"
+            let beaconData = Models.BeaconScanData(
+                major: beacon.major.intValue,
+                minor: beacon.minor.intValue,
+                rssi: beacon.rssi,
+                batteryLevel: 0 // iOS doesn't provide battery level directly
+            )
+            beaconBuffer[key] = beaconData
+        }
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+        switch status {
+        case .authorizedAlways, .authorizedWhenInUse:
+            if isServiceRunning {
+                startService()
+            }
+        case .denied, .restricted:
+            stopService()
+        case .notDetermined:
+            break
+        @unknown default:
+            break
+        }
     }
     
     // MARK: - CBPeripheralManagerDelegate
@@ -146,15 +256,25 @@ class BeaconService: NSObject, CLLocationManagerDelegate, CBPeripheralManagerDel
     func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
         switch peripheral.state {
         case .poweredOn:
-            print("Bluetooth is powered on")
-        case .poweredOff:
-            print("Bluetooth is powered off")
-        case .unauthorized:
-            print("Bluetooth is unauthorized")
-        case .unsupported:
-            print("Bluetooth is unsupported")
+            if isServiceRunning {
+                startService()
+            }
+        case .poweredOff, .unauthorized, .unsupported:
+            stopService()
         default:
-            print("Bluetooth state is unknown")
+            break
         }
+    }
+    
+    // MARK: - Logging
+    
+    private func logDebug(_ message: String) {
+        #if DEBUG
+        print("[BeaconService] \(message)")
+        #endif
+    }
+    
+    private func logError(_ message: String) {
+        print("[BeaconService] ERROR: \(message)")
     }
 } 
