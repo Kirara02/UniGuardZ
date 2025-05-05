@@ -275,8 +275,8 @@ class BeaconService : Service(), RangeNotifier, MonitorNotifier {
                     "  \"name\": \"${beacon.bluetoothName ?: "Unknown"}\",\n" +
                     "  \"uuid\": \"${beacon.id1}\",\n" +
                     "  \"macAddress\": \"${beacon.bluetoothAddress ?: "Unknown"}\",\n" +
-                        "  \"major\": \"$major\",\n" +
-                        "  \"minor\": \"$minor\",\n" +
+                    "  \"major\": \"$major\",\n" +
+                    "  \"minor\": \"$minor\",\n" +
                     "  \"distance\": \"${beacon.distance}\",\n" +
                     "  \"proximity\": \"${BeaconScanData.getProximityOfBeacon(beacon).value}\",\n" +
                     "  \"scanTime\": \"${System.currentTimeMillis()}\",\n" +
