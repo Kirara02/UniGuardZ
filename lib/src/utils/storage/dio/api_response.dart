@@ -9,7 +9,7 @@ abstract class ApiResponse<T> with _$ApiResponse<T> {
     required bool success,
     required String message,
     T? data,
-    required MetaData meta,
+    required Meta meta,
     ErrorData? error,
   }) = _ApiResponse;
 
@@ -20,8 +20,8 @@ abstract class ApiResponse<T> with _$ApiResponse<T> {
 }
 
 @freezed
-abstract class MetaData with _$MetaData {
-  const factory MetaData({
+abstract class Meta with _$Meta {
+  const factory Meta({
     required String timestamp,
     String? path,
     int? total,
@@ -29,10 +29,9 @@ abstract class MetaData with _$MetaData {
     int? limit,
     int? total_pages,
     String? local_time,
-  }) = _MetaData;
+  }) = _Meta;
 
-  factory MetaData.fromJson(Map<String, dynamic> json) =>
-      _$MetaDataFromJson(json);
+  factory Meta.fromJson(Map<String, dynamic> json) => _$MetaFromJson(json);
 }
 
 @freezed

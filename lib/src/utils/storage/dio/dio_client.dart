@@ -54,7 +54,7 @@ class DioClient {
         return ApiResponse<T>(
           success: false,
           message: errorMessage,
-          meta: MetaData(timestamp: DateTime.now().toIso8601String()),
+          meta: Meta(timestamp: DateTime.now().toIso8601String()),
           error: ErrorData(
             code: response.statusCode ?? 0,
             details: errorMessage,
@@ -74,7 +74,7 @@ class DioClient {
       return ApiResponse<T>(
         success: false,
         message: DioErrorUtil.handleError(e),
-        meta: MetaData(timestamp: DateTime.now().toIso8601String()),
+        meta: Meta(timestamp: DateTime.now().toIso8601String()),
         error: ErrorData(
           code: e.response?.statusCode ?? 0,
           details: e.response?.data?['message'] ?? DioErrorUtil.handleError(e),
@@ -87,7 +87,7 @@ class DioClient {
       return ApiResponse<T>(
         success: false,
         message: e.toString(),
-        meta: MetaData(timestamp: DateTime.now().toIso8601String()),
+        meta: Meta(timestamp: DateTime.now().toIso8601String()),
         error: ErrorData(code: 500, details: e.toString()),
       );
     }
@@ -139,7 +139,7 @@ class DioClient {
         return ApiResponse<T>(
           success: false,
           message: errorMessage,
-          meta: MetaData(timestamp: DateTime.now().toIso8601String()),
+          meta: Meta(timestamp: DateTime.now().toIso8601String()),
           error: ErrorData(
             code: response.statusCode ?? 0,
             details: errorMessage,
@@ -159,7 +159,7 @@ class DioClient {
       return ApiResponse<T>(
         success: false,
         message: DioErrorUtil.handleError(e),
-        meta: MetaData(timestamp: DateTime.now().toIso8601String()),
+        meta: Meta(timestamp: DateTime.now().toIso8601String()),
         error: ErrorData(
           code: e.response?.statusCode ?? 0,
           details: e.response?.data?['message'] ?? DioErrorUtil.handleError(e),
@@ -172,7 +172,7 @@ class DioClient {
       return ApiResponse<T>(
         success: false,
         message: e.toString(),
-        meta: MetaData(timestamp: DateTime.now().toIso8601String()),
+        meta: Meta(timestamp: DateTime.now().toIso8601String()),
         error: ErrorData(code: 500, details: e.toString()),
       );
     }
@@ -228,10 +228,10 @@ class DioClient {
             data: items,
             meta:
                 responseData['meta'] != null
-                    ? MetaData.fromJson(
+                    ? Meta.fromJson(
                       responseData['meta'] as Map<String, dynamic>,
                     )
-                    : MetaData(timestamp: DateTime.now().toIso8601String()),
+                    : Meta(timestamp: DateTime.now().toIso8601String()),
           );
         }
       }
@@ -249,10 +249,8 @@ class DioClient {
           message: errorMessage,
           meta:
               response.data['meta'] != null
-                  ? MetaData.fromJson(
-                    response.data['meta'] as Map<String, dynamic>,
-                  )
-                  : MetaData(timestamp: DateTime.now().toIso8601String()),
+                  ? Meta.fromJson(response.data['meta'] as Map<String, dynamic>)
+                  : Meta(timestamp: DateTime.now().toIso8601String()),
           error: ErrorData(
             code: response.statusCode ?? 0,
             details: errorMessage,
@@ -270,7 +268,7 @@ class DioClient {
       return ApiResponse<List<T>>(
         success: false,
         message: DioErrorUtil.handleError(e),
-        meta: MetaData(timestamp: DateTime.now().toIso8601String()),
+        meta: Meta(timestamp: DateTime.now().toIso8601String()),
         error: ErrorData(
           code: e.response?.statusCode ?? 0,
           details: e.response?.data?['message'] ?? DioErrorUtil.handleError(e),
@@ -281,7 +279,7 @@ class DioClient {
       return ApiResponse<List<T>>(
         success: false,
         message: e.toString(),
-        meta: MetaData(timestamp: DateTime.now().toIso8601String()),
+        meta: Meta(timestamp: DateTime.now().toIso8601String()),
         error: ErrorData(code: 500, details: e.toString()),
       );
     }
