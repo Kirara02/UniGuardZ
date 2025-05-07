@@ -24,7 +24,7 @@ class GetLogs implements UseCase<Result<List<LogAlertModel>>, GetLogsParams> {
     );
 
     if (response.success && response.data != null) {
-      return Result.success(response.data!);
+      return Result.success(response.data!, meta: response.meta);
     }
 
     return Result.failed(response.message);

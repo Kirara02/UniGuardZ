@@ -18,17 +18,33 @@ class FormsScreen extends ConsumerStatefulWidget {
 }
 
 class _FormsScreenState extends ConsumerState<FormsScreen> {
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
     Future.microtask(
       () => ref.read(formsControllerProvider.notifier).getForms(),
     );
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      ref.read(formsControllerProvider.notifier).loadMore();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final activities = ref.watch(formsControllerProvider);
+    final state = ref.watch(formsControllerProvider);
 
     return CustomView(
       header: CustomViewHeader(
@@ -56,46 +72,51 @@ class _FormsScreenState extends ConsumerState<FormsScreen> {
           ref.read(formsControllerProvider.notifier).getForms();
         },
         child: ListView(
+          controller: _scrollController,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           children: [
-            activities.when(
-              data: (data) {
-                if (data.isEmpty) {
-                  return Emoticons(text: context.l10n!.no_forms_found);
-                }
-                return ListView.separated(
-                  itemCount: data.length,
-                  shrinkWrap: true,
-                  padding: EdgeInsets.zero,
-                  physics: const BouncingScrollPhysics(),
-                  separatorBuilder:
-                      (context, index) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    var form = data[index];
-                    return ListItem(
-                      // onPressed: () => ref
-                      //     .read(routerProvider)
-                      //     .push(Routes.form, extra: activity),
-                      onPressed: () => FormRoute(formId: form.id).push(context),
-                      title: form.formName,
-                      prefixIconPath: Assets.icons.guard.path,
+            if (state.isLoading && state.forms.isEmpty)
+              SizedBox(
+                height: context.height * .9,
+                child: const Center(child: CircularProgressIndicator()),
+              )
+            else if (state.error != null && state.forms.isEmpty)
+              SizedBox(
+                height: context.height * .9,
+                child: Emoticons(text: 'Error: ${state.error}'),
+              )
+            else if (state.forms.isEmpty)
+              Emoticons(text: context.l10n!.no_forms_found)
+            else ...[
+              ListView.separated(
+                itemCount: state.forms.length + (state.hasMore ? 1 : 0),
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                physics: const NeverScrollableScrollPhysics(),
+                separatorBuilder:
+                    (context, index) => const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  if (index == state.forms.length) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child:
+                            state.isLoadingMore
+                                ? const CircularProgressIndicator()
+                                : const SizedBox.shrink(),
+                      ),
                     );
-                  },
-                );
-              },
-              loading:
-                  () => SizedBox(
-                    height: context.height * .9,
-                    child: const Center(child: CircularProgressIndicator()),
-                  ),
-              error: (e, stack) {
-                printIfDebug('Error fetching activities: $e');
-                return SizedBox(
-                  height: context.height * .9,
-                  child: Center(child: Text('Error: $e')),
-                );
-              },
-            ),
+                  }
+
+                  var form = state.forms[index];
+                  return ListItem(
+                    onPressed: () => FormRoute(formId: form.id).push(context),
+                    title: form.formName,
+                    prefixIconPath: Assets.icons.guard.path,
+                  );
+                },
+              ),
+            ],
           ],
         ),
       ),

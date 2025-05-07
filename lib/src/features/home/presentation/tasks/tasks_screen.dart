@@ -18,17 +18,33 @@ class TasksScreen extends ConsumerStatefulWidget {
 }
 
 class _TasksScreenState extends ConsumerState<TasksScreen> {
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
     Future.microtask(
       () => ref.read(tasksControllerProvider.notifier).getTasks(),
     );
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      ref.read(tasksControllerProvider.notifier).loadMore();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final activities = ref.watch(tasksControllerProvider);
+    final state = ref.watch(tasksControllerProvider);
 
     return CustomView(
       header: CustomViewHeader(
@@ -56,46 +72,51 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
           ref.read(tasksControllerProvider.notifier).getTasks();
         },
         child: ListView(
+          controller: _scrollController,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           children: [
-            activities.when(
-              data: (data) {
-                if (data.isEmpty) {
-                  return Emoticons(text: context.l10n!.no_tasks_found);
-                }
-                return ListView.separated(
-                  itemCount: data.length,
-                  shrinkWrap: true,
-                  padding: EdgeInsets.zero,
-                  physics: const BouncingScrollPhysics(),
-                  separatorBuilder:
-                      (context, index) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    var task = data[index];
-                    return ListItem(
-                      // onPressed: () => ref
-                      //     .read(routerProvider)
-                      //     .push(Routes.ACTIVITY, extra: activity),
-                      onPressed: () => TaskRoute(taskId: task.id).push(context),
-                      title: task.taskName,
-                      prefixIconPath: Assets.icons.guard.path,
+            if (state.isLoading && state.tasks.isEmpty)
+              SizedBox(
+                height: context.height * .9,
+                child: const Center(child: CircularProgressIndicator()),
+              )
+            else if (state.error != null && state.tasks.isEmpty)
+              SizedBox(
+                height: context.height * .9,
+                child: Emoticons(text: 'Error: ${state.error}'),
+              )
+            else if (state.tasks.isEmpty)
+              Emoticons(text: context.l10n!.no_tasks_found)
+            else ...[
+              ListView.separated(
+                itemCount: state.tasks.length + (state.hasMore ? 1 : 0),
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                physics: const NeverScrollableScrollPhysics(),
+                separatorBuilder:
+                    (context, index) => const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  if (index == state.tasks.length) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child:
+                            state.isLoadingMore
+                                ? const CircularProgressIndicator()
+                                : const SizedBox.shrink(),
+                      ),
                     );
-                  },
-                );
-              },
-              loading:
-                  () => SizedBox(
-                    height: context.height * .9,
-                    child: const Center(child: CircularProgressIndicator()),
-                  ),
-              error: (e, stack) {
-                printIfDebug('Error fetching activities: $e');
-                return SizedBox(
-                  height: context.height * .9,
-                  child: Center(child: Text('Error: $e')),
-                );
-              },
-            ),
+                  }
+
+                  var task = state.tasks[index];
+                  return ListItem(
+                    onPressed: () => TaskRoute(taskId: task.id).push(context),
+                    title: task.taskName,
+                    prefixIconPath: Assets.icons.guard.path,
+                  );
+                },
+              ),
+            ],
           ],
         ),
       ),

@@ -8,9 +8,12 @@ import 'package:ugz_app/src/features/home/domain/model/task_submit_model.dart';
 import 'package:ugz_app/src/utils/storage/dio/api_response.dart';
 
 abstract interface class FormsRepository {
-  Future<ApiResponse<List<ActivityModel>>> getActivities();
-  Future<ApiResponse<List<TaskModel>>> getTasks();
-  Future<ApiResponse<List<FormModel>>> getForms();
+  Future<ApiResponse<List<ActivityModel>>> getActivities({
+    int? limit,
+    int? page,
+  });
+  Future<ApiResponse<List<TaskModel>>> getTasks({int? limit, int? page});
+  Future<ApiResponse<List<FormModel>>> getForms({int? limit, int? page});
   Future<ApiResponse<ActivityModel>> getActivityById({required String id});
   Future<ApiResponse<TaskModel>> getTaskById({required String id});
   Future<ApiResponse<FormModel>> getFormById({required String id});

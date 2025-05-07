@@ -18,9 +18,18 @@ class FormsRepositoryImpl implements FormsRepository {
 
   FormsRepositoryImpl({required DioClient dioClient}) : _dioClient = dioClient;
   @override
-  Future<ApiResponse<List<ActivityModel>>> getActivities() async {
+  Future<ApiResponse<List<ActivityModel>>> getActivities({
+    int? limit,
+    int? page,
+  }) async {
+    final queryParameters = <String, dynamic>{
+      if (page != null) 'page': page,
+      if (limit != null) 'limit': limit,
+    };
+
     return await _dioClient.getApiListResponse<ActivityModel>(
       'mobile-api/admin/activity',
+      queryParameters: queryParameters,
       itemConverter: (json) {
         return ActivityModel.fromJson(json);
       },
@@ -28,9 +37,15 @@ class FormsRepositoryImpl implements FormsRepository {
   }
 
   @override
-  Future<ApiResponse<List<FormModel>>> getForms() async {
+  Future<ApiResponse<List<FormModel>>> getForms({int? limit, int? page}) async {
+    final queryParameters = <String, dynamic>{
+      if (page != null) 'page': page,
+      if (limit != null) 'limit': limit,
+    };
+
     return await _dioClient.getApiListResponse<FormModel>(
       'mobile-api/admin/form',
+      queryParameters: queryParameters,
       itemConverter: (json) {
         return FormModel.fromJson(json);
       },
@@ -38,9 +53,15 @@ class FormsRepositoryImpl implements FormsRepository {
   }
 
   @override
-  Future<ApiResponse<List<TaskModel>>> getTasks() async {
+  Future<ApiResponse<List<TaskModel>>> getTasks({int? limit, int? page}) async {
+    final queryParameters = <String, dynamic>{
+      if (page != null) 'page': page,
+      if (limit != null) 'limit': limit,
+    };
+
     return await _dioClient.getApiListResponse<TaskModel>(
       'mobile-api/admin/task',
+      queryParameters: queryParameters,
       itemConverter: (json) {
         return TaskModel.fromJson(json);
       },
