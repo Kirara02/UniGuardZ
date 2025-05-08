@@ -95,18 +95,18 @@ class SettingsScreen extends ConsumerWidget {
           const Divider(),
           ListTile(
             title: Text(context.l10n!.profile),
-            leading: const Icon(Icons.account_circle_rounded),
+            leading: const Icon(Icons.account_circle_outlined),
             onTap: () => ProfileRoute().push(context),
           ),
-          ListTile(
-            title: Text(context.l10n!.change_password),
-            leading: const Icon(Icons.password_rounded),
-            onTap: () => ChangePasswordRoute().push(context),
-          ),
-          const Divider(),
+          // ListTile(
+          //   title: Text(context.l10n!.change_password),
+          //   leading: const Icon(Icons.password_rounded),
+          //   onTap: () => ChangePasswordRoute().push(context),
+          // ),
+          // const Divider(),
           ListTile(
             title: Text(context.l10n!.app_language),
-            leading: const Icon(Icons.translate_rounded),
+            leading: const Icon(Icons.translate_outlined),
             onTap: () {
               showDialog(
                 context: context,
@@ -128,7 +128,7 @@ class SettingsScreen extends ConsumerWidget {
           const AppThemeModeTile(),
           ListTile(
             title: Text(context.l10n!.about),
-            leading: const Icon(Icons.info_rounded),
+            leading: const Icon(Icons.info_outline),
             onTap: () => AboutRoute().push(context),
           ),
           const Gap(12),

@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:dio_cache_interceptor_hive_store/dio_cache_interceptor_hive_store.dart';
 import 'package:flutter/material.dart';
+import 'package:http_cache_hive_store/http_cache_hive_store.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:ugz_app/src/constants/db_keys.dart';
@@ -19,7 +19,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 part 'global_providers.g.dart';
 
 @riverpod
-DioClient dioClientKey(DioClientKeyRef ref) => DioClient(
+DioClient dioClientKey(ref) => DioClient(
   dio: ref
       .watch(networkModuleProvider)
       .provideDio(
@@ -117,9 +117,7 @@ class L10n extends _$L10n with SharedPreferenceClientMixin<Locale> {
 }
 
 @riverpod
-UniguardDB appDatabase(AppDatabaseRef ref) {
-  return UniguardDB.instance();
-}
+UniguardDB appDatabase(ref) => UniguardDB.instance();
 
 @riverpod
 SharedPreferences sharedPreferences(ref) => throw UnimplementedError();
@@ -131,7 +129,7 @@ Directory? appDirectory(ref) => throw UnimplementedError();
 PackageInfo packageInfo(ref) => throw UnimplementedError();
 
 @riverpod
-HiveCacheStore hiveCacheStore(HiveCacheStoreRef ref) =>
+HiveCacheStore hiveCacheStore(ref) =>
     HiveCacheStore(ref.watch(appDirectoryProvider)?.path);
 
 @riverpod

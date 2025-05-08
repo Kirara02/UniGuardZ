@@ -21,7 +21,7 @@ Future<void> main() async {
   final Directory? appDirectory;
   if (!kIsWeb) {
     final appDocDirectory = await getApplicationDocumentsDirectory();
-    appDirectory = Directory(path.join(appDocDirectory.path, 'Sorayomi'));
+    appDirectory = Directory(path.join(appDocDirectory.path, 'Uniguard'));
 
     await appDirectory.create(recursive: true);
 

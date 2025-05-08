@@ -2,9 +2,9 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
-import 'package:dio_cache_interceptor_hive_store/dio_cache_interceptor_hive_store.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http_cache_hive_store/http_cache_hive_store.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:ugz_app/src/utils/storage/dio/http_request_interceptor.dart';
@@ -37,7 +37,6 @@ class DioNetworkModule {
     final cacheOptions = CacheOptions(
       store: hiveCacheStore,
       policy: CachePolicy.refreshForceCache,
-      hitCacheOnErrorExcept: [401, 403],
       priority: CachePriority.normal,
       maxStale: const Duration(days: 14),
     );
@@ -69,16 +68,6 @@ class DioNetworkModule {
           enabled: kDebugMode,
         ),
       );
-
-    // if (kDebugMode) {
-    //   dio.interceptors.add(
-    //     LogInterceptor(
-    //       responseBody: true,
-    //       requestBody: true,
-    //       logPrint: (e) => debugPrint(e.toString()),
-    //     ),
-    //   );
-    // }
 
     return dio;
   }

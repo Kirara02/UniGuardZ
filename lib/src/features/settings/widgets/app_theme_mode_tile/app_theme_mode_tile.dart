@@ -33,7 +33,9 @@ class AppThemeModeTile extends ConsumerWidget {
     final themeMode = ref.watch(appThemeModeProvider);
     return ListTile(
       leading: Icon(
-        context.isDarkMode ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+        context.isDarkMode
+            ? Icons.dark_mode_outlined
+            : Icons.light_mode_outlined,
       ),
       subtitle: themeMode != null ? Text(themeMode.toLocale(context)) : null,
       title: Text(context.l10n!.app_theme),
