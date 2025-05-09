@@ -1,4 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:ugz_app/src/constants/endpoint.dart';
 import 'package:ugz_app/src/features/auth/data/interface/auth_repository.dart';
 import 'package:ugz_app/src/features/auth/domain/model/forgot_password_response.dart';
 import 'package:ugz_app/src/features/auth/domain/model/login_response.dart';
@@ -19,7 +20,7 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<ApiResponse<User>> getUser() async {
     return await _dioClient.getApiResponse<User>(
-      "web-api/account/profile",
+      AuthUrl.profile,
       converter: (json) => User.fromJson(json),
     );
   }
@@ -29,7 +30,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required LoginParams params,
   }) async {
     return await _dioClient.postApiResponse<LoginResponse>(
-      "web-api/auth/login",
+      AuthUrl.login,
       data: {
         "email": params.email.trimEndSpaces,
         "password": params.password.trimEndSpaces,
@@ -43,7 +44,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required ForgotPasswordParams params,
   }) async {
     return await _dioClient.postApiResponse<ForgotPasswordResponse>(
-      "web-api/auth/login",
+      AuthUrl.forgot_password,
       data: {"email": params.email.trimEndSpaces},
       converter: (json) => ForgotPasswordResponse.fromJson(json),
     );

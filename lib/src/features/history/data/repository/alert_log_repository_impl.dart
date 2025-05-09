@@ -1,4 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:ugz_app/src/constants/endpoint.dart';
 import 'package:ugz_app/src/features/history/data/interface/alert_log_repository.dart';
 import 'package:ugz_app/src/features/history/domain/model/log_alert_model.dart';
 import 'package:ugz_app/src/global_providers/global_providers.dart';
@@ -16,7 +17,7 @@ class AlertLogRepositoryImpl implements AlertLogRepository {
   @override
   Future<ApiResponse<LogAlertModel>> getLogById({required String id}) async {
     return await _dioClient.getApiResponse<LogAlertModel>(
-      'mobile-api/admin/log-alert/$id',
+      LogUrl.withId(id),
       converter: (json) {
         return LogAlertModel.fromJson(json);
       },
@@ -43,7 +44,7 @@ class AlertLogRepositoryImpl implements AlertLogRepository {
     };
 
     return await _dioClient.getApiListResponse<LogAlertModel>(
-      'mobile-api/admin/log-alert',
+      LogUrl.logs,
       queryParameters: queryParameters,
       itemConverter: (json) {
         return LogAlertModel.fromJson(json);

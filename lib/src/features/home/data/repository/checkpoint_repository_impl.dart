@@ -1,4 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:ugz_app/src/constants/endpoint.dart';
 import 'package:ugz_app/src/features/home/data/interface/checkpoint_repository.dart';
 import 'package:ugz_app/src/features/home/domain/model/checkpoint_model.dart';
 import 'package:ugz_app/src/features/home/domain/model/scan_nfc_submit_model.dart';
@@ -50,7 +51,7 @@ class CheckpointRepositoryImpl implements CheckpointRepository {
     }
 
     return await _dioClient.postApiResponse(
-      "mobile-api/admin/checkpoint/log",
+      CheckpointUrl.submit,
       data: data,
       converter: (json) => ScanNfcSubmitModel.fromJson(json),
     );
@@ -61,7 +62,7 @@ class CheckpointRepositoryImpl implements CheckpointRepository {
     required int checkpointType,
   }) async {
     return await _dioClient.getApiListResponse<CheckpointModel>(
-      "mobile-api/admin/checkpoint",
+      CheckpointUrl.get,
       queryParameters: {
         'checkpoint_type_id': checkpointType,
         // 1 = BEACONS, 2 = NFC, 3 = RFID, 4 = GEOFENCE

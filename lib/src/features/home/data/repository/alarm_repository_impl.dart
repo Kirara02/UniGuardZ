@@ -1,4 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:ugz_app/src/constants/endpoint.dart';
 import 'package:ugz_app/src/features/home/data/interface/alarm_repository.dart';
 import 'package:ugz_app/src/features/home/domain/model/alarm_model.dart';
 import 'package:ugz_app/src/global_providers/global_providers.dart';
@@ -18,7 +19,7 @@ class AlarmRepositoryImpl implements AlarmRepository {
     required double longitude,
   }) async {
     return await _dioClient.postApiResponse<AlarmModel>(
-      "mobile-api/admin/alarm/log/start",
+      AlarmUrl.start,
       data: {
         "latitude": latitude,
         "longitude": longitude,
@@ -35,7 +36,7 @@ class AlarmRepositoryImpl implements AlarmRepository {
     required double longitude,
   }) async {
     return await _dioClient.postApiResponse<AlarmModel>(
-      "mobile-api/admin/alarm/log/stop/$id",
+      AlarmUrl.stop(id),
       data: {
         "latitude": latitude,
         "longitude": longitude,

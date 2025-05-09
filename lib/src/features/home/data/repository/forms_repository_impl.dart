@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:ugz_app/src/constants/endpoint.dart';
 import 'package:ugz_app/src/features/home/data/interface/forms_repository.dart';
 import 'package:ugz_app/src/features/home/domain/model/activity_model.dart';
 import 'package:ugz_app/src/features/home/domain/model/activity_submit_model.dart';
@@ -28,7 +29,7 @@ class FormsRepositoryImpl implements FormsRepository {
     };
 
     return await _dioClient.getApiListResponse<ActivityModel>(
-      'mobile-api/admin/activity',
+      FormUrl.activity,
       queryParameters: queryParameters,
       itemConverter: (json) {
         return ActivityModel.fromJson(json);
@@ -44,7 +45,7 @@ class FormsRepositoryImpl implements FormsRepository {
     };
 
     return await _dioClient.getApiListResponse<FormModel>(
-      'mobile-api/admin/form',
+      FormUrl.form,
       queryParameters: queryParameters,
       itemConverter: (json) {
         return FormModel.fromJson(json);
@@ -60,7 +61,7 @@ class FormsRepositoryImpl implements FormsRepository {
     };
 
     return await _dioClient.getApiListResponse<TaskModel>(
-      'mobile-api/admin/task',
+      FormUrl.task,
       queryParameters: queryParameters,
       itemConverter: (json) {
         return TaskModel.fromJson(json);
@@ -74,7 +75,7 @@ class FormsRepositoryImpl implements FormsRepository {
     required String id,
   }) async {
     return await _dioClient.postApiResponse<ActivitySubmitModel>(
-      "mobile-api/admin/activity/log/$id",
+      FormUrl.submitActivity(id),
       data: data,
       converter: (json) => ActivitySubmitModel.fromJson(json),
     );
@@ -86,7 +87,7 @@ class FormsRepositoryImpl implements FormsRepository {
     required String id,
   }) async {
     return await _dioClient.postApiResponse<FormSubmitModel>(
-      "mobile-api/admin/form/log/$id",
+      FormUrl.submitForm(id),
       data: data,
       converter: (json) => FormSubmitModel.fromJson(json),
     );
@@ -98,7 +99,7 @@ class FormsRepositoryImpl implements FormsRepository {
     required String id,
   }) async {
     return await _dioClient.postApiResponse<TaskSubmitModel>(
-      "mobile-api/admin/task/log/$id",
+      FormUrl.submitTask(id),
       data: data,
       converter: (json) => TaskSubmitModel.fromJson(json),
     );
@@ -109,7 +110,7 @@ class FormsRepositoryImpl implements FormsRepository {
     required String id,
   }) async {
     return await _dioClient.getApiResponse(
-      "mobile-api/admin/activity/$id",
+      FormUrl.activityWithId(id),
       converter: (json) => ActivityModel.fromJson(json),
     );
   }
@@ -117,7 +118,7 @@ class FormsRepositoryImpl implements FormsRepository {
   @override
   Future<ApiResponse<FormModel>> getFormById({required String id}) async {
     return await _dioClient.getApiResponse(
-      "mobile-api/admin/form/$id",
+      FormUrl.formWithId(id),
       converter: (json) => FormModel.fromJson(json),
     );
   }
@@ -125,7 +126,7 @@ class FormsRepositoryImpl implements FormsRepository {
   @override
   Future<ApiResponse<TaskModel>> getTaskById({required String id}) async {
     return await _dioClient.getApiResponse(
-      "mobile-api/admin/task/$id",
+      FormUrl.taskWithId(id),
       converter: (json) => TaskModel.fromJson(json),
     );
   }
